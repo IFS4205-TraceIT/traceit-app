@@ -1,8 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
+import 'package:traceit_app/services/bluetooth_service.dart';
 
-class TracingScreen extends StatelessWidget {
+class TracingScreen extends StatefulWidget {
   const TracingScreen({super.key});
+
+  @override
+  State<TracingScreen> createState() => _TracingScreenState();
+}
+
+class _TracingScreenState extends State<TracingScreen> {
+  bool bluetoothServiceIsRunning = false;
+  late FlutterBackgroundService bluetoothService;
+
+  void startBluetoothService() async {
+    // Initialise Bluetooth service if not running
+    if (!bluetoothServiceIsRunning) {
+      await initialiseBluetoothService().then((service) {
+        bluetoothService = service;
+
+        setState(() {
+          bluetoothServiceIsRunning = true;
+        });
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    startBluetoothService();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,18 +53,25 @@ class TracingScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [Text('data')],
+            Text('Service running: $bluetoothServiceIsRunning'),
+            ElevatedButton(
+              onPressed: () => startBluetoothService(),
+              child: const Text('Start Service'),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [Text('data')],
+            ElevatedButton(
+              onPressed: () {
+                if (bluetoothServiceIsRunning) {
+                  bluetoothService.invoke('stopService');
+                  setState(() {
+                    bluetoothServiceIsRunning = false;
+                  });
+                }
+              },
+              child: const Text('Stop Service'),
             ),
           ],
         ),
