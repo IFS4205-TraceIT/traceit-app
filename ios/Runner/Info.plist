@@ -52,5 +52,10 @@
 	<array>
 		<string>dev.flutter.background.refresh</string>
 	</array>
+
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>$(PRODUCT_NAME) would like to use Bluetooth to scan for close contacts</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>$(PRODUCT_NAME) would like to use Bluetooth to scan for close contacts</string>
 </dict>
 </plist>
