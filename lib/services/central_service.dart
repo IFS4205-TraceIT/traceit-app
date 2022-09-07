@@ -24,13 +24,13 @@ void test_central_service(service) {
       // print('Device RSSI: ${device.rssi}');
       // print('Device RSSI: ${device.manufacturerData}');
 
-      int manufacturerId = device.manufacturerData.buffer
-          .asByteData()
-          .getUint16(0, Endian.little);
+      // int manufacturerId = device.manufacturerData.buffer
+      //     .asByteData()
+      //     .getUint16(0, Endian.little);
 
-      String manufacturerData = utf8.decode(
-          device.manufacturerData.sublist(2, device.manufacturerData.length));
-      print('$manufacturerId $manufacturerData');
+      // String manufacturerData = utf8.decode(
+      //     device.manufacturerData.sublist(2, device.manufacturerData.length));
+      // print('$manufacturerId $manufacturerData');
 
       if (service is AndroidServiceInstance) {
         service.setForegroundNotificationInfo(
