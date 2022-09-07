@@ -11,17 +11,17 @@ class TracingScreen extends StatefulWidget {
 }
 
 class _TracingScreenState extends State<TracingScreen> {
-  bool bluetoothServiceIsRunning = false;
-  late FlutterBackgroundService bluetoothService;
+  bool _bluetoothServiceIsRunning = false;
+  late FlutterBackgroundService _bluetoothService;
 
   void startBluetoothService() async {
     // Initialise Bluetooth service if not running
-    if (!bluetoothServiceIsRunning) {
+    if (!_bluetoothServiceIsRunning) {
       await initialiseBluetoothService().then((service) {
-        bluetoothService = service;
+        _bluetoothService = service;
 
         setState(() {
-          bluetoothServiceIsRunning = true;
+          _bluetoothServiceIsRunning = true;
         });
       });
     }
@@ -57,17 +57,17 @@ class _TracingScreenState extends State<TracingScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Service running: $bluetoothServiceIsRunning'),
+            Text('Service running: $_bluetoothServiceIsRunning'),
             ElevatedButton(
               onPressed: () => startBluetoothService(),
               child: const Text('Start Service'),
             ),
             ElevatedButton(
               onPressed: () {
-                if (bluetoothServiceIsRunning) {
-                  bluetoothService.invoke('stopService');
+                if (_bluetoothServiceIsRunning) {
+                  _bluetoothService.invoke('stopService');
                   setState(() {
-                    bluetoothServiceIsRunning = false;
+                    _bluetoothServiceIsRunning = false;
                   });
                 }
               },

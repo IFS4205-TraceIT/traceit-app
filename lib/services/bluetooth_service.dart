@@ -5,21 +5,28 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
-import 'package:traceit_app/services/peripheral_service.dart';
+import 'package:traceit_app/bluetooth/ble_advertiser.dart';
+import 'package:traceit_app/bluetooth/gatt_server.dart';
 
 import 'central_service.dart';
 
 Future<FlutterBackgroundService> initialiseBluetoothService() async {
-  final service = FlutterBackgroundService();
+  final bluetoothService = FlutterBackgroundService();
 
-  await service.configure(
+  await bluetoothService.configure(
     androidConfiguration: AndroidConfiguration(
+      // this will be executed when app is in foreground or background in separated isolate
       onStart: onStart,
+
+      // auto start service
       autoStart: false,
       isForegroundMode: true,
     ),
     iosConfiguration: IosConfiguration(
+      // auto start service
       autoStart: false,
+
+      // this will be executed when app is in foreground in separated isolate
       onForeground: onStart,
 
       // you have to enable background fetch capability on xcode project
@@ -27,9 +34,9 @@ Future<FlutterBackgroundService> initialiseBluetoothService() async {
     ),
   );
 
-  service.startService();
+  bluetoothService.startService();
 
-  return service;
+  return bluetoothService;
 }
 
 // to ensure this is executed
@@ -43,6 +50,9 @@ void onStart(ServiceInstance service) async {
   // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
 
+  BleAdvertiser bleAdvertiser = BleAdvertiser();
+  GattServer gattServer = GattServer();
+
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
       service.setAsForegroundService();
@@ -55,6 +65,16 @@ void onStart(ServiceInstance service) async {
 
   service.on('stopService').listen((event) {
     service.stopSelf();
+
+    bleAdvertiser.stopAdvertising();
+    // gattServer.stop();
+
+    if (service is AndroidServiceInstance) {
+      service.setForegroundNotificationInfo(
+        title: 'Scanning for close contacts',
+        content: 'Advertising: ${bleAdvertiser.isAdvertising()}',
+      );
+    }
   });
 
   // Background task
@@ -84,7 +104,16 @@ void onStart(ServiceInstance service) async {
 
   if (androidInfo.model == 'SM-N920I') {
     // Peripheral
-    test_peripheral_service(service);
+    bleAdvertiser.startAdvertising();
+    gattServer.start();
+
+    // Update foreground notification
+    if (service is AndroidServiceInstance) {
+      service.setForegroundNotificationInfo(
+        title: 'Scanning for close contacts',
+        content: 'Advertising: ${bleAdvertiser.isAdvertising()}',
+      );
+    }
   } else {
     // Central
     test_central_service(service);

@@ -18,10 +18,11 @@ void test_central_service(service) {
   flutterReactiveBle
       .scanForDevices(withServices: [Uuid.parse(traceItServiceUuid)]).listen(
     (device) {
-      print('Device name: ${device.id}');
-      print('Device service UUID: ${device.serviceUuids}');
-      print('Device RSSI: ${device.rssi}');
-      print('Device RSSI: ${device.manufacturerData}');
+      print(device);
+      // print('Device name: ${device.id}');
+      // print('Device service UUID: ${device.serviceUuids}');
+      // print('Device RSSI: ${device.rssi}');
+      // print('Device RSSI: ${device.manufacturerData}');
 
       int manufacturerId = device.manufacturerData.buffer
           .asByteData()
