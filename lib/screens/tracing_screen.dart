@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
 import 'package:traceit_app/services/bluetooth_service.dart';
+import 'package:traceit_app/services/gatt_server.dart';
 
 class TracingScreen extends StatefulWidget {
   const TracingScreen({super.key});
@@ -12,18 +12,10 @@ class TracingScreen extends StatefulWidget {
 }
 
 class _TracingScreenState extends State<TracingScreen> {
-  static const platform = MethodChannel('com.traceit_traceit_app/gatt');
-
-  Future<void> startGattServer() async {
-    try {
-      await platform.invokeMethod('startGattServer');
-    } on PlatformException catch (e) {
-      print(e);
-    }
-  }
-
   bool _bluetoothServiceIsRunning = false;
   late FlutterBackgroundService _bluetoothService;
+
+  final GattServer _gattServer = GattServer();
 
   void startBluetoothService() async {
     // Initialise Bluetooth service if not running
@@ -37,7 +29,7 @@ class _TracingScreenState extends State<TracingScreen> {
       });
 
       // Start GATT server
-      startGattServer();
+      _gattServer.startGattServer();
     }
   }
 

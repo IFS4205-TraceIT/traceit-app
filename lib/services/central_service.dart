@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:traceit_app/const.dart';
