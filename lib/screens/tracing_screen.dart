@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
-import 'package:traceit_app/services/bluetooth_service.dart';
-import 'package:traceit_app/services/gatt_server.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:traceit_app/tracing/peripheral/gatt_server.dart';
+import 'package:traceit_app/tracing/peripheral/ble_advertiser.dart';
+import 'package:traceit_app/services/central_service.dart';
 
 class TracingScreen extends StatefulWidget {
   const TracingScreen({super.key});
@@ -12,31 +13,94 @@ class TracingScreen extends StatefulWidget {
 }
 
 class _TracingScreenState extends State<TracingScreen> {
-  bool _bluetoothServiceIsRunning = false;
-  late FlutterBackgroundService _bluetoothService;
+  late String deviceModel;
 
-  final GattServer _gattServer = GattServer();
+  bool _peripheralServiceRunning = false;
+  bool _centralServiceRunning = false;
 
-  void startBluetoothService() async {
-    // Initialise Bluetooth service if not running
-    if (!_bluetoothServiceIsRunning) {
-      await initialiseBluetoothService().then((service) {
-        _bluetoothService = service;
+  late BLEAdvertiser _bleAdvertiser = BLEAdvertiser();
+  late bool _bleAdvertisementSupported = false;
+  bool _bleAdvertising = false;
 
-        setState(() {
-          _bluetoothServiceIsRunning = true;
-        });
-      });
+  late GattServer _gattServer = GattServer();
+  bool _gattServerRunning = false;
 
-      // Start GATT server
-      _gattServer.startGattServer();
+  Future<void> getDeviceInfo() async {
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+    setState(() {
+      deviceModel = androidInfo.model!;
+    });
+    debugPrint('Running on ${androidInfo.model}');
+  }
+
+  Future<void> startPeripheralService() async {
+    if (_peripheralServiceRunning) {
+      return;
     }
+
+    bool advertisementSupported = await _bleAdvertiser.isSupported();
+
+    setState(() {
+      _peripheralServiceRunning = true;
+      _bleAdvertisementSupported = advertisementSupported;
+    });
+
+    await startAdvertising();
+    await startGattServer();
+  }
+
+  Future<void> startAdvertising() async {
+    if (!_bleAdvertisementSupported || _bleAdvertising) {
+      return;
+    }
+
+    await _bleAdvertiser.startAdvertising();
+
+    setState(() {
+      _bleAdvertising = true;
+    });
+  }
+
+  Future<void> stopAdvertising() async {
+    if (!_bleAdvertisementSupported || !_bleAdvertising) {
+      return;
+    }
+
+    await _bleAdvertiser.stopAdvertising();
+
+    setState(() {
+      _bleAdvertising = false;
+    });
+  }
+
+  Future<void> startGattServer() async {
+    await _gattServer.start();
+    setState(() {
+      _gattServerRunning = true;
+    });
+  }
+
+  Future<void> stopGattServer() async {
+    await _gattServer.stop();
+    setState(() {
+      _gattServerRunning = false;
+    });
   }
 
   @override
   void initState() {
     super.initState();
-    startBluetoothService();
+
+    getDeviceInfo().then((value) {
+      if (deviceModel == 'SM-N920I') {
+        // Peripheral
+        startPeripheralService();
+      } else {
+        // Central
+        test_central_service();
+      }
+    });
   }
 
   @override
@@ -60,24 +124,43 @@ class _TracingScreenState extends State<TracingScreen> {
         ],
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Wrap(
+          direction: Axis.vertical,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 20,
           children: [
-            Text('Service running: $_bluetoothServiceIsRunning'),
-            ElevatedButton(
-              onPressed: () => startBluetoothService(),
-              child: const Text('Start Service'),
+            Text('Advertisement Support: $_bleAdvertisementSupported'),
+            Text('BLE Advertising: $_bleAdvertising'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: (() =>
+                      _bleAdvertisementSupported ? startAdvertising() : null),
+                  child: const Text('Start Advertiser'),
+                ),
+                const SizedBox(width: 15),
+                ElevatedButton(
+                  onPressed: (() =>
+                      _bleAdvertisementSupported ? stopAdvertising() : null),
+                  child: const Text('Stop Advertiser'),
+                ),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                if (_bluetoothServiceIsRunning) {
-                  _bluetoothService.invoke('stopService');
-                  setState(() {
-                    _bluetoothServiceIsRunning = false;
-                  });
-                }
-              },
-              child: const Text('Stop Service'),
+            Text('GATT Sever Running: $_gattServerRunning'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: (() => startGattServer()),
+                  child: const Text('Start GATT Server'),
+                ),
+                const SizedBox(width: 15),
+                ElevatedButton(
+                  onPressed: (() => stopGattServer()),
+                  child: const Text('Stop GATT Server'),
+                ),
+              ],
             ),
           ],
         ),

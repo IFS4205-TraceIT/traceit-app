@@ -14,13 +14,25 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            CHANNEL
+                flutterEngine.dartExecutor.binaryMessenger,
+                CHANNEL
         ).setMethodCallHandler { call, result ->
-            if (call.method == "startGattServer") {
-                Log.i(TAG, "Test")
-            } else {
-                result.notImplemented()
+            when (call.method) {
+                "isRunning" -> {
+                    Log.i(TAG, "isRunning")
+                    result.success(true)
+                }
+                "start" -> {
+                    Log.i(TAG, "start")
+                    result.success(true)
+                }
+                "stop" -> {
+                    Log.i(TAG, "stop")
+                    result.success(true)
+                }
+                else -> {
+                    result.notImplemented()
+                }
             }
         }
     }

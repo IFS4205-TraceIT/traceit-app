@@ -1,19 +1,11 @@
-import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:traceit_app/const.dart';
 
-void test_central_service(service) {
-  if (service is AndroidServiceInstance) {
-    service.setForegroundNotificationInfo(
-      title: 'Scanning for close contacts',
-      content: 'Central mode',
-    );
-  }
-
+void test_central_service() {
   final FlutterReactiveBle flutterReactiveBle = FlutterReactiveBle();
 
   flutterReactiveBle
-      .scanForDevices(withServices: [Uuid.parse(traceItServiceUuid)]).listen(
+      .scanForDevices(withServices: [Uuid.parse(serviceUuid)]).listen(
     (device) {
       print(device);
       // print('Device name: ${device.id}');
@@ -28,13 +20,6 @@ void test_central_service(service) {
       // String manufacturerData = utf8.decode(
       //     device.manufacturerData.sublist(2, device.manufacturerData.length));
       // print('$manufacturerId $manufacturerData');
-
-      if (service is AndroidServiceInstance) {
-        service.setForegroundNotificationInfo(
-          title: 'Scanning for close contacts',
-          content: 'Scanning (Central) ${device.id}',
-        );
-      }
     },
     onError: (error) {},
   );

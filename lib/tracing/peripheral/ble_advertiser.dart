@@ -1,7 +1,9 @@
 import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
 import 'package:traceit_app/const.dart';
 
-void test_peripheral_service() async {
+class BLEAdvertiser {
+  final FlutterBlePeripheral blePeripheral = FlutterBlePeripheral();
+
   final AdvertiseData advertiseData = AdvertiseData(
     serviceUuid: serviceUuid,
     // manufacturerId: 4205,
@@ -20,16 +22,32 @@ void test_peripheral_service() async {
     connectable: true,
   );
 
-  final FlutterBlePeripheral blePeripheral = FlutterBlePeripheral();
-
-  bool isPeripheralSupported = await blePeripheral.isSupported;
-
-  if (!isPeripheralSupported) {
-    return;
+  Future<bool> isSupported() async {
+    return await blePeripheral.isSupported;
   }
 
-  await blePeripheral.start(
-    advertiseData: advertiseData,
-    advertiseSetParameters: advertiseSetParameters,
-  );
+  Future<bool> isConnected() async {
+    return await blePeripheral.isConnected;
+  }
+
+  Future<bool> isAdvertising() async {
+    return await blePeripheral.isAdvertising;
+  }
+
+  Future<void> startAdvertising() async {
+    bool isSupported = await blePeripheral.isSupported;
+
+    if (!isSupported) {
+      return;
+    }
+
+    await blePeripheral.start(
+      advertiseData: advertiseData,
+      advertiseSetParameters: advertiseSetParameters,
+    );
+  }
+
+  Future<void> stopAdvertising() async {
+    blePeripheral.stop();
+  }
 }

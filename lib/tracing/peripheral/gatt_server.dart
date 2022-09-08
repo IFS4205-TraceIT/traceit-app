@@ -14,9 +14,26 @@ class GattServer {
 
   static const platform = MethodChannel('com.traceit_traceit_app/gatt');
 
-  Future<void> startGattServer() async {
+  Future<bool> isRunning() async {
     try {
-      await platform.invokeMethod('startGattServer');
+      return await platform.invokeMethod('isRunning');
+    } on PlatformException catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  Future<void> start() async {
+    try {
+      await platform.invokeMethod('start');
+    } on PlatformException catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> stop() async {
+    try {
+      await platform.invokeMethod('stop');
     } on PlatformException catch (e) {
       print(e);
     }
