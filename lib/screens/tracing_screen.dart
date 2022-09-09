@@ -18,11 +18,11 @@ class _TracingScreenState extends State<TracingScreen> {
   bool _peripheralServiceRunning = false;
   bool _centralServiceRunning = false;
 
-  late BLEAdvertiser _bleAdvertiser = BLEAdvertiser();
+  late final BLEAdvertiser _bleAdvertiser = BLEAdvertiser();
   late bool _bleAdvertisementSupported = false;
   bool _bleAdvertising = false;
 
-  late GattServer _gattServer = GattServer();
+  late final GattServer _gattServer = GattServer();
   bool _gattServerRunning = false;
 
   Future<void> getDeviceInfo() async {
@@ -32,6 +32,13 @@ class _TracingScreenState extends State<TracingScreen> {
       deviceModel = androidInfo.model!;
     });
     debugPrint('Running on ${androidInfo.model}');
+  }
+
+  Future<void> checkAdvertisingSupport() async {
+    bool isSupported = await _bleAdvertiser.isSupported();
+    setState(() {
+      _bleAdvertisementSupported = isSupported;
+    });
   }
 
   Future<void> startPeripheralService() async {
@@ -51,10 +58,6 @@ class _TracingScreenState extends State<TracingScreen> {
   }
 
   Future<void> startAdvertising() async {
-    if (!_bleAdvertisementSupported || _bleAdvertising) {
-      return;
-    }
-
     await _bleAdvertiser.startAdvertising();
 
     setState(() {
@@ -63,10 +66,6 @@ class _TracingScreenState extends State<TracingScreen> {
   }
 
   Future<void> stopAdvertising() async {
-    if (!_bleAdvertisementSupported || !_bleAdvertising) {
-      return;
-    }
-
     await _bleAdvertiser.stopAdvertising();
 
     setState(() {
@@ -76,15 +75,21 @@ class _TracingScreenState extends State<TracingScreen> {
 
   Future<void> startGattServer() async {
     await _gattServer.start();
+
+    bool gattServerRunning = await _gattServer.isRunning();
+
     setState(() {
-      _gattServerRunning = true;
+      _gattServerRunning = gattServerRunning;
     });
   }
 
   Future<void> stopGattServer() async {
     await _gattServer.stop();
+
+    bool gattServerRunning = await _gattServer.isRunning();
+
     setState(() {
-      _gattServerRunning = false;
+      _gattServerRunning = gattServerRunning;
     });
   }
 
@@ -93,6 +98,9 @@ class _TracingScreenState extends State<TracingScreen> {
     super.initState();
 
     getDeviceInfo().then((value) {
+      checkAdvertisingSupport();
+
+      // TODO: remove at a later point
       if (deviceModel == 'SM-N920I') {
         // Peripheral
         startPeripheralService();
@@ -129,38 +137,56 @@ class _TracingScreenState extends State<TracingScreen> {
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 20,
           children: [
+            Text(
+                'Mode: ${_peripheralServiceRunning ? 'Peripheral' : 'Central'}'),
             Text('Advertisement Support: $_bleAdvertisementSupported'),
-            Text('BLE Advertising: $_bleAdvertising'),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: (() =>
-                      _bleAdvertisementSupported ? startAdvertising() : null),
-                  child: const Text('Start Advertiser'),
-                ),
-                const SizedBox(width: 15),
-                ElevatedButton(
-                  onPressed: (() =>
-                      _bleAdvertisementSupported ? stopAdvertising() : null),
-                  child: const Text('Stop Advertiser'),
-                ),
-              ],
+            Visibility(
+              visible: _peripheralServiceRunning,
+              child: Wrap(
+                direction: Axis.vertical,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 10,
+                children: [
+                  Text('BLE Advertising: $_bleAdvertising'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: (() => _bleAdvertisementSupported
+                            ? startAdvertising()
+                            : null),
+                        child: const Text('Start Advertiser'),
+                      ),
+                      const SizedBox(width: 15),
+                      ElevatedButton(
+                        onPressed: (() => _bleAdvertisementSupported
+                            ? stopAdvertising()
+                            : null),
+                        child: const Text('Stop Advertiser'),
+                      ),
+                    ],
+                  ),
+                  Text('GATT Server Running: $_gattServerRunning'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: startGattServer,
+                        child: const Text('Start GATT Server'),
+                      ),
+                      const SizedBox(width: 15),
+                      ElevatedButton(
+                        onPressed: stopGattServer,
+                        child: const Text('Stop GATT Server'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            Text('GATT Sever Running: $_gattServerRunning'),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: (() => startGattServer()),
-                  child: const Text('Start GATT Server'),
-                ),
-                const SizedBox(width: 15),
-                ElevatedButton(
-                  onPressed: (() => stopGattServer()),
-                  child: const Text('Stop GATT Server'),
-                ),
-              ],
+            Visibility(
+              visible: _centralServiceRunning,
+              child: Text('Central Service Running: $_centralServiceRunning'),
             ),
           ],
         ),

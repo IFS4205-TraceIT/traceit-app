@@ -7,11 +7,14 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    val TAG: String = "GATT Server"
     val CHANNEL: String = "com.traceit_traceit_app/gatt"
+
+    private lateinit var gattServerManager: GattServerManager
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        gattServerManager = GattServerManager(applicationContext)
 
         MethodChannel(
                 flutterEngine.dartExecutor.binaryMessenger,
@@ -19,15 +22,14 @@ class MainActivity : FlutterActivity() {
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "isRunning" -> {
-                    Log.i(TAG, "isRunning")
-                    result.success(true)
+                    result.success(gattServerManager.isRunning())
                 }
                 "start" -> {
-                    Log.i(TAG, "start")
+                    gattServerManager.startGattServer()
                     result.success(true)
                 }
                 "stop" -> {
-                    Log.i(TAG, "stop")
+                    gattServerManager.stopGattServer()
                     result.success(true)
                 }
                 else -> {

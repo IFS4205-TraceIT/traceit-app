@@ -9,7 +9,7 @@ import io.flutter.Log
 import java.util.*
 
 class GattServerManager(context: Context) {
-    private val TAG = "GATT Server";
+    private val TAG: String = "GATT Server"
 
     private val context: Context
     private var bluetoothManager: BluetoothManager
@@ -17,6 +17,7 @@ class GattServerManager(context: Context) {
 
     private lateinit var gattCharacteristic: BluetoothGattCharacteristic
     private lateinit var gattService: BluetoothGattService
+    private var isRunning: Boolean = false
 
     init {
         this.context = context
@@ -189,13 +190,26 @@ class GattServerManager(context: Context) {
         }
     }
 
+    fun isRunning(): Boolean {
+        return isRunning
+    }
 
-    fun startGattServer(): Boolean {
+    fun startGattServer() {
+        Log.i(TAG, "Starting GATT server")
+
+        if (bluetoothGattServer is BluetoothGattServer) {
+            Log.i(TAG, "GATT server not started. GATT server already running")
+            return
+        }
+
         bluetoothGattServer = bluetoothManager.openGattServer(context, gattServerCallback)
 
         if (bluetoothGattServer == null) {
-            return false
+            Log.e(TAG, "GATT server not started")
+            return
         }
+
+        isRunning = true
 
         gattCharacteristic = BluetoothGattCharacteristic(
             UUID.randomUUID(), // TODO: Get UUID from flutter
@@ -211,11 +225,22 @@ class GattServerManager(context: Context) {
         gattService.addCharacteristic(gattCharacteristic)
         bluetoothGattServer!!.addService(gattService)
 
-        return true
+        Log.i(TAG, "Started GATT server")
     }
 
     fun stopGattServer() {
+        Log.i(TAG, "Stopping GATT server")
+
+        if (bluetoothGattServer == null) {
+            Log.e(TAG, "GATT server not stopped. No instance of GATT server")
+            return
+        }
+
+        isRunning = false
+
         bluetoothGattServer!!.close()
         bluetoothGattServer = null
+
+        Log.i(TAG, "Stopped GATT server")
     }
 }

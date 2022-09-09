@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class GattServer {
@@ -18,7 +19,7 @@ class GattServer {
     try {
       return await platform.invokeMethod('isRunning');
     } on PlatformException catch (e) {
-      print(e);
+      debugPrint(e.toString());
       return false;
     }
   }
@@ -27,7 +28,7 @@ class GattServer {
     try {
       await platform.invokeMethod('start');
     } on PlatformException catch (e) {
-      print(e);
+      debugPrint(e.toString());
     }
   }
 
@@ -35,7 +36,7 @@ class GattServer {
     try {
       await platform.invokeMethod('stop');
     } on PlatformException catch (e) {
-      print(e);
+      debugPrint(e.toString());
     }
   }
 }
