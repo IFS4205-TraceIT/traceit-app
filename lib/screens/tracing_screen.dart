@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:traceit_app/tracing/central/ble_client.dart';
 import 'package:traceit_app/tracing/peripheral/gatt_server.dart';
 import 'package:traceit_app/tracing/peripheral/ble_advertiser.dart';
-import 'package:traceit_app/services/central_service.dart';
 
 class TracingScreen extends StatefulWidget {
   const TracingScreen({super.key});
@@ -18,12 +18,18 @@ class _TracingScreenState extends State<TracingScreen> {
   bool _peripheralServiceRunning = false;
   bool _centralServiceRunning = false;
 
-  late final BLEAdvertiser _bleAdvertiser = BLEAdvertiser();
-  late bool _bleAdvertisementSupported = false;
+  // Peripheral BLE advertiser
+  final BLEAdvertiser _bleAdvertiser = BLEAdvertiser();
+  bool _bleAdvertisementSupported = false;
   bool _bleAdvertising = false;
 
-  late final GattServer _gattServer = GattServer();
+  // Peripheral GATT server
+  final GattServer _gattServer = GattServer();
   bool _gattServerRunning = false;
+
+  // Central BLE scanner
+  final BLEClient _bleClient = BLEClient();
+  bool _bleScanning = false;
 
   Future<void> getDeviceInfo() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -93,6 +99,34 @@ class _TracingScreenState extends State<TracingScreen> {
     });
   }
 
+  void startCentralService() {
+    if (_centralServiceRunning) {
+      return;
+    }
+
+    setState(() {
+      _centralServiceRunning = true;
+    });
+
+    startScanning();
+  }
+
+  void startScanning() {
+    _bleClient.initScan();
+
+    setState(() {
+      _bleScanning = true;
+    });
+  }
+
+  void stopScanning() {
+    _bleClient.stopScan();
+
+    setState(() {
+      _bleScanning = false;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -106,7 +140,7 @@ class _TracingScreenState extends State<TracingScreen> {
         startPeripheralService();
       } else {
         // Central
-        test_central_service();
+        startCentralService();
       }
     });
   }
@@ -186,7 +220,28 @@ class _TracingScreenState extends State<TracingScreen> {
             ),
             Visibility(
               visible: _centralServiceRunning,
-              child: Text('Central Service Running: $_centralServiceRunning'),
+              child: Wrap(
+                direction: Axis.vertical,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 10,
+                children: [
+                  Text('Client scanning: $_bleScanning'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: startScanning,
+                        child: const Text('Start scanning'),
+                      ),
+                      const SizedBox(width: 15),
+                      ElevatedButton(
+                        onPressed: stopScanning,
+                        child: const Text('Stop scanning'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),

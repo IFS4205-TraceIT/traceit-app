@@ -25,6 +25,9 @@
 <!--        android:usesPermissionFlags="neverForLocation"-->
 <!--        tools:targetApi="s"/>-->
 
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
    <application
         android:label="TraceIT"
         android:name="${applicationName}"

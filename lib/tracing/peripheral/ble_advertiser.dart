@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
 import 'package:traceit_app/const.dart';
@@ -10,21 +7,21 @@ class BLEAdvertiser {
 
   final AdvertiseData advertiseData = AdvertiseData(
     serviceUuid: serviceUuid,
-    manufacturerId: 4205,
-    manufacturerData: Uint8List.fromList(utf8.encode('TraceIT')),
+    // manufacturerId: 4205,
+    // manufacturerData: Uint8List.fromList(utf8.encode('TraceIT')),
   );
 
   final AdvertiseSettings advertiseSettings = AdvertiseSettings(
     advertiseMode: AdvertiseMode.advertiseModeBalanced,
-    txPowerLevel: AdvertiseTxPower.advertiseTxPowerMedium,
-    timeout: 60 * 1000,
-  );
-
-  final AdvertiseSetParameters advertiseSetParameters = AdvertiseSetParameters(
-    txPowerLevel: txPowerHigh,
-    duration: 60 * 1000,
+    txPowerLevel: AdvertiseTxPower.advertiseTxPowerHigh,
+    timeout: 3 * 60 * 1000, // 3 minutes
     connectable: true,
   );
+
+  // final AdvertiseSetParameters advertiseSetParameters = AdvertiseSetParameters(
+  //   txPowerLevel: txPowerHigh,
+  //   duration: 3 * 60 * 1000, // 3 minutes
+  // );
 
   Future<bool> isSupported() async {
     return await blePeripheral.isSupported;
@@ -53,6 +50,7 @@ class BLEAdvertiser {
     await blePeripheral.start(
       advertiseData: advertiseData,
       advertiseSettings: advertiseSettings,
+      // advertiseSetParameters: advertiseSetParameters,
     );
   }
 
@@ -63,10 +61,12 @@ class BLEAdvertiser {
     if (!isSupported) {
       debugPrint('BLE advertising not supported');
       return;
-    } else if (!isAdvertising) {
-      debugPrint('BLE advertising not running');
-      return;
     }
+
+    // if (!isAdvertising) {
+    //   debugPrint('BLE advertising not running');
+    //   return;
+    // }
 
     await blePeripheral.stop();
   }
