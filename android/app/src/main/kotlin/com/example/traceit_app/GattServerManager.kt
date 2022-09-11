@@ -1,11 +1,12 @@
 package com.example.traceit_app
 
 import android.bluetooth.*
-import android.bluetooth.BluetoothGatt.GATT_FAILURE
 import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.BluetoothGattCharacteristic.*
 import android.content.Context
+import com.google.gson.Gson
 import io.flutter.Log
+import org.json.JSONObject
 import java.util.*
 
 class GattServerManager(context: Context) {
@@ -30,6 +31,11 @@ class GattServerManager(context: Context) {
         val writeDataPayload: MutableMap<String, ByteArray> = HashMap()
         val readPayloadMap: MutableMap<String, ByteArray> = HashMap()
         val deviceCharacteristicMap: MutableMap<String, UUID> = HashMap()
+
+        override fun onMtuChanged(device: BluetoothDevice?, mtu: Int) {
+            super.onMtuChanged(device, mtu)
+            Log.i(TAG, "${device?.address} Requested MTU: $mtu")
+        }
 
         override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
             when (newState) {
@@ -63,15 +69,25 @@ class GattServerManager(context: Context) {
             device?.let {
                 Log.i(TAG, "onCharacteristicReadRequest from ${device.address}")
 
-                // check / update tempid is valid
+                // TODO: check / update tempid is valid through flutter method channel
 
-                // Prepare peripheral payload
+                // TODO: Prepare payload
+                val payload: String = JSONObject()
+                    .put(
+                        "id",
+                        "4qS6+bFwTVhFNLeme/N2DMkAN2l6NgtbCELmPOict0/l0PmmGpkNliB8RicVjEZxWxtjFofUUNZCkUJrbEYAqyA1t7zCQGmfHQPEO5+M2VBeRJCOgEmeVeQE97FKFtvTVA=="
+                    )
+                    .toString(0)
+                    .replace("[\n\r]", "")
+                Log.i(TAG, payload)
+
+                // Send response
                 bluetoothGattServer!!.sendResponse(
                     device,
                     requestId,
                     GATT_SUCCESS,
                     0,
-                    "test response payload".toByteArray()
+                    payload.toByteArray()
                 )
             }
 
@@ -88,107 +104,48 @@ class GattServerManager(context: Context) {
         ) {
             if (device == null) {
                 Log.e(TAG, "Write stopped - no device")
+                return
             }
 
-            device?.let {
-                Log.i(
-                    TAG,
-                    "onCharacteristicWriteRequest - ${device.address} - preparedWrite: $preparedWrite"
-                )
+            Log.i(
+                TAG,
+                "onCharacteristicWriteRequest - ${device.address} - preparedWrite: $preparedWrite"
+            )
 
-                Log.i(
-                    TAG,
-                    "onCharacteristicWriteRequest from ${device.address} - $requestId - $offset"
-                )
+            Log.i(
+                TAG,
+                "onCharacteristicWriteRequest from ${device.address} - $requestId - $offset"
+            )
 
-                // if value is not null
-                // save value
-                deviceCharacteristicMap[device.address] = characteristic!!.uuid
-                var valuePassed = ""
-                value?.let {
-                    valuePassed = String(value, Charsets.UTF_8)
-                }
-                Log.i(
-                    TAG,
-                    "onCharacteristicWriteRequest from ${device.address} - $valuePassed"
-                )
-                if (value != null) {
-                    var dataBuffer = writeDataPayload[device.address]
-
-                    if (dataBuffer == null) {
-                        dataBuffer = ByteArray(0)
-                    }
-
-                    dataBuffer = dataBuffer.plus(value)
-                    writeDataPayload[device.address] = dataBuffer
-
-                    Log.i(
-                        TAG,
-                        "Accumulated characteristic: ${
-                            String(
-                                dataBuffer,
-                                Charsets.UTF_8
-                            )
-                        }"
-                    )
-
-                    if (preparedWrite && responseNeeded) {
-                        Log.i(TAG, "Sending response offset: ${dataBuffer.size}")
-                        bluetoothGattServer?.sendResponse(
-                            device,
-                            requestId,
-                            GATT_SUCCESS,
-                            dataBuffer.size,
-                            value
-                        )
-                    }
-                }
+            if (characteristic!!.uuid != CHARACTERISTIC_UUID) {
+                Log.i(TAG, "Characteristic UUID mismatch")
+                return
+            } else if (value == null) {
+                Log.i(TAG, "Received empty characteristic write")
+                return
             }
+
+            val receivedData = String(value, Charsets.UTF_8)
+            Log.i(TAG, "Received write data: $receivedData")
+
+            val writeData: Map<String, Any> = Gson().fromJson(
+                receivedData, HashMap<String, Any>().javaClass
+            )
+
+            // TODO: save write data
+
+            // Send acknowledgement response
+            bluetoothGattServer?.sendResponse(
+                device,
+                requestId,
+                GATT_SUCCESS,
+                0,
+                null
+            )
         }
 
-        override fun onExecuteWrite(device: BluetoothDevice?, requestId: Int, execute: Boolean) {
-            super.onExecuteWrite(device, requestId, execute)
-
-            val data = writeDataPayload[device!!.address]
-
-            data.let { dataBuffer ->
-
-                if (dataBuffer != null) {
-                    Log.i(
-                        TAG,
-                        "onExecuteWrite - $requestId- ${device.address} - ${
-                            String(
-                                dataBuffer,
-                                Charsets.UTF_8
-                            )
-                        }"
-                    )
-
-                    // TODO: save data
-//                    saveDataReceived(device)
-
-                    bluetoothGattServer?.sendResponse(
-                        device,
-                        requestId,
-                        GATT_SUCCESS,
-                        0,
-                        null
-                    )
-
-                } else {
-                    bluetoothGattServer?.sendResponse(
-                        device,
-                        requestId,
-                        GATT_FAILURE,
-                        0,
-                        null
-                    )
-                }
-            }
-        }
-
-        // TODO: save data
         fun saveDataReceived(device: BluetoothDevice) {
+            // TODO: Create flutter method channel to save data
         }
     }
 

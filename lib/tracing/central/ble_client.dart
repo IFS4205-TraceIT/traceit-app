@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -28,6 +27,7 @@ class BLEClient {
     //     device.manufacturerData.sublist(2, device.manufacturerData.length));
     // debugPrint('$manufacturerId $manufacturerData');
 
+    // TODO: Check if device is already in discovered list
     // if (!_discoveredDevices.contains(device.id)) {
     // _discoveredDevices.add(device.id);
     _connectToDevice(device);
@@ -50,19 +50,26 @@ class BLEClient {
       connectionTimeout: const Duration(seconds: 5),
     )
         .listen((connectionState) {
-      _onConnectionStateChange(connectionState);
+      _onConnectionStateChange(connectionState, device.rssi);
     }, onError: (error) {
       debugPrint('error : ${error.toString()}');
     });
   }
 
-  void _onConnectionStateChange(ConnectionStateUpdate connectionState) async {
+  void _onConnectionStateChange(
+      ConnectionStateUpdate connectionState, int rssi) async {
     debugPrint('connectionState : ${connectionState.toString()}');
 
     switch (connectionState.connectionState) {
       case DeviceConnectionState.connecting:
         break;
       case DeviceConnectionState.connected:
+        // Request larger MTU
+        int mtu = await _ble_client.requestMtu(
+            deviceId: connectionState.deviceId, mtu: 247);
+        debugPrint('Negotiated MTU: $mtu');
+
+        // Read characteristic data
         List<int> readData =
             await _ble_client.readCharacteristic(QualifiedCharacteristic(
           serviceId: Uuid.parse(serviceUuid),
@@ -72,6 +79,30 @@ class BLEClient {
 
         debugPrint('Received characteristic data : ${utf8.decode(readData)}');
 
+        // TODO: save data to device
+
+        // TODO: check if current tempid is valid
+
+        // Prepare write characteristic data
+        Map<String, dynamic> writeData = {
+          'id':
+              '4qS6+bFwTVtDZOuhI6dxDJwBZmt6Nl1UVULmOraUtxu20qn1T5BcmXF9GycVjEZxWxtjFofUUNZCkUJrbEYAqyA1t7zCQGmfHQPEO5+M2VBeJIs4BabrCfAi6x8evBSpKQ==',
+          'rssi': rssi,
+        };
+
+        debugPrint('Characteristic write data: ${jsonEncode(writeData)}');
+
+        // Write characteristic data
+        await _ble_client.writeCharacteristicWithResponse(
+          QualifiedCharacteristic(
+            serviceId: Uuid.parse(serviceUuid),
+            characteristicId: Uuid.parse(characteristicUuid),
+            deviceId: connectionState.deviceId,
+          ),
+          value: jsonEncode(writeData).codeUnits,
+        );
+
+        // Disconnect from GATT server
         _currentConnection!.cancel();
         _currentConnection = null;
 
