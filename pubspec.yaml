@@ -39,6 +39,8 @@ dependencies:
   flutter_ble_peripheral: ^1.0.0
   flutter_reactive_ble: ^5.0.2
   device_info_plus: ^4.1.2
+  flutter_secure_storage: ^6.0.0
+  hive: ^2.2.3
 
 dev_dependencies:
   flutter_test:
