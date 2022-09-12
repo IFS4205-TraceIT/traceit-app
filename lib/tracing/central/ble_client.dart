@@ -4,8 +4,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:traceit_app/const.dart';
+import 'package:traceit_app/storage.dart';
 
 class BLEClient {
+  final Storage storage = Storage();
+
   final FlutterReactiveBle _ble_client = FlutterReactiveBle();
   late StreamSubscription? _scanStream;
   bool _isScanning = false;
@@ -77,9 +80,10 @@ class BLEClient {
           deviceId: connectionState.deviceId,
         ));
 
-        debugPrint('Received characteristic data : ${utf8.decode(readData)}');
-
         // TODO: save data to device
+        Map receivedData = jsonDecode(utf8.decode(readData));
+        await storage.writeCloseContact(receivedData['id'], rssi);
+        debugPrint('Received characteristic data : ${receivedData.toString()}');
 
         // TODO: check if current tempid is valid
 

@@ -1,6 +1,7 @@
 package com.example.traceit_app
 
 import android.bluetooth.*
+import android.bluetooth.BluetoothGatt.GATT_FAILURE
 import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.BluetoothGattCharacteristic.*
 import android.content.Context
@@ -22,15 +23,14 @@ class GattServerManager(context: Context) {
     private lateinit var gattService: BluetoothGattService
     private var isRunning: Boolean = false
 
+    private var discoveredDevices: MutableSet<String> = mutableSetOf()
+
     init {
         this.context = context
         bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     }
 
     private val gattServerCallback = object : BluetoothGattServerCallback() {
-        val writeDataPayload: MutableMap<String, ByteArray> = HashMap()
-        val readPayloadMap: MutableMap<String, ByteArray> = HashMap()
-        val deviceCharacteristicMap: MutableMap<String, UUID> = HashMap()
 
         override fun onMtuChanged(device: BluetoothDevice?, mtu: Int) {
             super.onMtuChanged(device, mtu)
@@ -45,7 +45,6 @@ class GattServerManager(context: Context) {
 
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.i(TAG, "${device?.address} Disconnected from local GATT server.")
-                    readPayloadMap.remove(device?.address)
                 }
 
                 else -> {
@@ -61,36 +60,49 @@ class GattServerManager(context: Context) {
             characteristic: BluetoothGattCharacteristic?
         ) {
             if (device == null) {
-                Log.w(TAG, "No device")
+                Log.w(TAG, "Read stopped - No device")
+                return
             }
+
+            // TODO: Uncomment for release
+//            if (discoveredDevices.contains(device.address)) {
+//                Log.i(TAG, "Device ${device.address} already written")
+//
+//                bluetoothGattServer!!.sendResponse(
+//                    device,
+//                    requestId,
+//                    GATT_FAILURE,
+//                    0,
+//                    null
+//                )
+//
+//                return
+//            }
 
             // TODO: Check valid characteristic uuid
 
-            device?.let {
-                Log.i(TAG, "onCharacteristicReadRequest from ${device.address}")
+            Log.i(TAG, "onCharacteristicReadRequest from ${device.address}")
 
-                // TODO: check / update tempid is valid through flutter method channel
+            // TODO: check / update tempid is valid through flutter method channel
 
-                // TODO: Prepare payload
-                val payload: String = JSONObject()
-                    .put(
-                        "id",
-                        "4qS6+bFwTVhFNLeme/N2DMkAN2l6NgtbCELmPOict0/l0PmmGpkNliB8RicVjEZxWxtjFofUUNZCkUJrbEYAqyA1t7zCQGmfHQPEO5+M2VBeRJCOgEmeVeQE97FKFtvTVA=="
-                    )
-                    .toString(0)
-                    .replace("[\n\r]", "")
-                Log.i(TAG, payload)
-
-                // Send response
-                bluetoothGattServer!!.sendResponse(
-                    device,
-                    requestId,
-                    GATT_SUCCESS,
-                    0,
-                    payload.toByteArray()
+            // TODO: Prepare payload
+            val payload: String = JSONObject()
+                .put(
+                    "id",
+                    "4qS6+bFwTVhFNLeme/N2DMkAN2l6NgtbCELmPOict0/l0PmmGpkNliB8RicVjEZxWxtjFofUUNZCkUJrbEYAqyA1t7zCQGmfHQPEO5+M2VBeRJCOgEmeVeQE97FKFtvTVA=="
                 )
-            }
+                .toString(0)
+                .replace("[\n\r]", "")
+            Log.i(TAG, payload)
 
+            // Send response
+            bluetoothGattServer!!.sendResponse(
+                device,
+                requestId,
+                GATT_SUCCESS,
+                0,
+                payload.toByteArray()
+            )
         }
 
         override fun onCharacteristicWriteRequest(
@@ -103,9 +115,24 @@ class GattServerManager(context: Context) {
             value: ByteArray?
         ) {
             if (device == null) {
-                Log.e(TAG, "Write stopped - no device")
+                Log.i(TAG, "Write stopped - no device")
                 return
             }
+
+            // TODO: Uncomment for release
+//            if (discoveredDevices.contains(device.address)) {
+//                Log.i(TAG, "Device ${device.address} already written")
+//
+//                bluetoothGattServer!!.sendResponse(
+//                    device,
+//                    requestId,
+//                    GATT_FAILURE,
+//                    0,
+//                    null
+//                )
+//
+//                return
+//            }
 
             Log.i(
                 TAG,
@@ -119,9 +146,27 @@ class GattServerManager(context: Context) {
 
             if (characteristic!!.uuid != CHARACTERISTIC_UUID) {
                 Log.i(TAG, "Characteristic UUID mismatch")
+
+                bluetoothGattServer!!.sendResponse(
+                    device,
+                    requestId,
+                    GATT_FAILURE,
+                    0,
+                    null
+                )
+
                 return
             } else if (value == null) {
                 Log.i(TAG, "Received empty characteristic write")
+
+                bluetoothGattServer!!.sendResponse(
+                    device,
+                    requestId,
+                    GATT_FAILURE,
+                    0,
+                    null
+                )
+
                 return
             }
 
@@ -142,6 +187,10 @@ class GattServerManager(context: Context) {
                 0,
                 null
             )
+
+            // TODO: Uncomment for release
+            // Add device to discovered devices
+//            discoveredDevices.add(device.address)
         }
 
         fun saveDataReceived(device: BluetoothDevice) {
@@ -155,6 +204,9 @@ class GattServerManager(context: Context) {
 
     fun startGattServer() {
         Log.i(TAG, "Starting GATT server")
+
+        Log.i(TAG, "Reset discovered devices")
+        discoveredDevices.clear()
 
         if (bluetoothGattServer is BluetoothGattServer) {
             Log.i(TAG, "GATT server not started. GATT server already running")

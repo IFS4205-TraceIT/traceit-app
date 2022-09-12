@@ -63,11 +63,16 @@ class BLEAdvertiser {
       return;
     }
 
-    // if (!isAdvertising) {
-    //   debugPrint('BLE advertising not running');
-    //   return;
-    // }
+    if (!isAdvertising) {
+      debugPrint('BLE advertising not running');
+      return;
+    }
 
     await blePeripheral.stop();
+
+    // Busy wait until advertising is stopped
+    while (await blePeripheral.isAdvertising) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
   }
 }

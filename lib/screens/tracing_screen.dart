@@ -1,4 +1,6 @@
+import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
+import 'package:traceit_app/const.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:traceit_app/tracing/central/ble_client.dart';
@@ -30,6 +32,9 @@ class _TracingScreenState extends State<TracingScreen> {
   // Central BLE scanner
   final BLEClient _bleClient = BLEClient();
   bool _bleScanning = false;
+
+  late FBroadcast closeContactReceiver;
+  int _closeContactCount = 0;
 
   Future<void> getDeviceInfo() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -143,6 +148,16 @@ class _TracingScreenState extends State<TracingScreen> {
         startCentralService();
       }
     });
+
+    // Register broadcast receiver for close contact count
+    FBroadcast.instance().register(
+      closeContactBroadcastKey,
+      ((value, callback) {
+        setState(() {
+          _closeContactCount = value;
+        });
+      }),
+    );
   }
 
   @override
@@ -172,8 +187,17 @@ class _TracingScreenState extends State<TracingScreen> {
           spacing: 20,
           children: [
             Text(
+              'Close Contacts',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            Text(
+              _closeContactCount.toString(),
+              style: Theme.of(context).textTheme.headline1,
+            ),
+            Text(
                 'Mode: ${_peripheralServiceRunning ? 'Peripheral' : 'Central'}'),
             Text('Advertisement Support: $_bleAdvertisementSupported'),
+            // Peripheral (Advertiser/Server) controls
             Visibility(
               visible: _peripheralServiceRunning,
               child: Wrap(
@@ -218,6 +242,7 @@ class _TracingScreenState extends State<TracingScreen> {
                 ],
               ),
             ),
+            // Central (Scanner/Client) controls
             Visibility(
               visible: _centralServiceRunning,
               child: Wrap(
