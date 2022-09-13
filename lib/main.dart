@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
+import 'package:traceit_app/storage_method_channel.dart';
 
 void main() {
   runApp(const MyApp());
+  StorageMethodChannel.instance.configureChannel();
 }
 
 class MyApp extends StatelessWidget {

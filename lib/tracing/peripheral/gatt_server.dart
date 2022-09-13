@@ -13,7 +13,7 @@ class GattServer {
   /// Singleton constructor
   GattServer._internal();
 
-  static const platform = MethodChannel('com.traceit_traceit_app/gatt');
+  static const platform = MethodChannel('com.traceit.traceit_app/gatt');
 
   Future<bool> isRunning() async {
     try {

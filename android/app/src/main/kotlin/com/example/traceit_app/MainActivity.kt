@@ -1,13 +1,12 @@
 package com.example.traceit_app
 
 import androidx.annotation.NonNull
-import io.flutter.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    val CHANNEL: String = "com.traceit_traceit_app/gatt"
+    private val CHANNEL_NAME_GATT: String = "com.traceit.traceit_app/gatt"
 
     private lateinit var gattServerManager: GattServerManager
 
@@ -16,9 +15,14 @@ class MainActivity : FlutterActivity() {
 
         gattServerManager = GattServerManager(applicationContext)
 
+        configureGattMethodChannel(flutterEngine)
+        configureStorageMethodChannel(flutterEngine)
+    }
+
+    private fun configureGattMethodChannel(flutterEngine: FlutterEngine) {
         MethodChannel(
-                flutterEngine.dartExecutor.binaryMessenger,
-                CHANNEL
+            flutterEngine.dartExecutor.binaryMessenger,
+            CHANNEL_NAME_GATT
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "isRunning" -> {
@@ -37,5 +41,9 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+    }
+
+    private fun configureStorageMethodChannel(flutterEngine: FlutterEngine) {
+        StorageMethodChannel.configureChannel(flutterEngine)
     }
 }

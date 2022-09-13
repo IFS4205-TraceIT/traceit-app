@@ -177,7 +177,8 @@ class GattServerManager(context: Context) {
                 receivedData, HashMap<String, Any>().javaClass
             )
 
-            // TODO: save write data
+            // Save write data
+            saveDataReceived(writeData)
 
             // Send acknowledgement response
             bluetoothGattServer?.sendResponse(
@@ -193,8 +194,12 @@ class GattServerManager(context: Context) {
 //            discoveredDevices.add(device.address)
         }
 
-        fun saveDataReceived(device: BluetoothDevice) {
-            // TODO: Create flutter method channel to save data
+        fun saveDataReceived(writeData: Map<String, Any>) {
+            Log.i(TAG, "Saving data received")
+            StorageMethodChannel.writeCloseContact(
+                writeData["id"] as String,
+                (writeData["rssi"] as Double).toInt()
+            )
         }
     }
 
