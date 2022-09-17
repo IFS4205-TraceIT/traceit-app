@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:traceit_app/screens/tracing_screen.dart';
+import 'package:traceit_app/screens/login_screen.dart';
 import 'package:traceit_app/storage_method_channel.dart';
 
 void main() {
@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: TracingScreen(),
+      home: LoginScreen(),
     );
   }
 }
