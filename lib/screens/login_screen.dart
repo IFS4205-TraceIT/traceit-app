@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:traceit_app/const.dart';
+import 'package:traceit_app/screens/totp_screen.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
+import 'package:traceit_app/storage.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,7 +17,23 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final Storage _storage = Storage();
+
+  bool _hasOtp = false;
+  late String _tempAccessToken;
+
+  void checkIsLoggedIn() async {
+    Map<String, String?> tokens = await _storage.getTokens();
+
+    // If user is logged in, go to tracing screen
+    if (mounted && tokens['accessToken'] != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const TracingScreen(),
+        ),
+      );
+    }
+  }
 
   String? isValidEmail(String? email) {
     if (email == null || email.isEmpty) {
@@ -37,19 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  void checkIsLoggedIn() async {
-    String? token = await _secureStorage.read(key: 'isLoggedIn');
-
-    // If user is logged in, go to tracing screen
-    if (mounted && token != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const TracingScreen(),
-        ),
-      );
-    }
-  }
-
   Future<String?>? onLogin(LoginData loginData) async {
     debugPrint('Login info');
     debugPrint('Username: ${loginData.name}');
@@ -57,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Send login request to server
     http.Response response = await http.post(
-      Uri.parse('http://10.0.2.2:8080/auth/login'),
+      Uri.parse('$serverUrl/auth/login'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -73,10 +78,13 @@ class _LoginScreenState extends State<LoginScreen> {
     // If login is successful, save token to secure storage
     if (response.statusCode == 200) {
       bool hasOtp = responseBody['user']['has_otp'] as bool;
-      String accessToken = responseBody['user']['tokens']['access'] as String;
+      String tempAccessToken =
+          responseBody['user']['tokens']['access'] as String;
 
-      // TODO: Save token to secure storage
-      await _secureStorage.write(key: 'tempAccessToken', value: accessToken);
+      setState(() {
+        this._hasOtp = hasOtp;
+        this._tempAccessToken = tempAccessToken;
+      });
       return null;
     } else if (response.statusCode >= 400 && response.statusCode < 500) {
       return 'Login failed! Please check your credentials.';
@@ -86,19 +94,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<String?>? onSignUp(SignupData signupData) async {
-    // TODO: implement signup
     debugPrint('Signup info');
     debugPrint('Name: ${signupData.name}');
     debugPrint('Password: ${signupData.password}');
-
-    signupData.additionalSignupData?.forEach((key, value) {
-      debugPrint('$key: $value');
-    });
+    debugPrint('Email: ${signupData.additionalSignupData!['email']}');
+    debugPrint(
+        'Phone number: ${signupData.additionalSignupData!['phoneNumber']}');
 
     // Send register request to server
     // Send login request to server
     http.Response response = await http.post(
-      Uri.parse('http://10.0.2.2:8080/auth/register'),
+      Uri.parse('$serverUrl/auth/register'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -120,6 +126,15 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       return 'Signup failed! Please try again later.';
     }
+  }
+
+  onAnimationCompleted() {
+    Navigator.of(context).pushReplacement(MaterialPageRoute(
+      builder: (context) => TotpScreen(
+        hasOtp: _hasOtp,
+        tempAccessToken: _tempAccessToken,
+      ),
+    ));
   }
 
   @override
@@ -170,11 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       onLogin: (loginData) => onLogin(loginData),
       onSignup: (signUpData) => onSignUp(signUpData),
-      onSubmitAnimationCompleted: () {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (context) => const TracingScreen(),
-        ));
-      },
+      onSubmitAnimationCompleted: () => onAnimationCompleted(),
       onRecoverPassword: (name) {
         debugPrint('Recover password info');
         debugPrint('Name: $name');

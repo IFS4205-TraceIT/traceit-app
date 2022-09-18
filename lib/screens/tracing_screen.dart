@@ -164,8 +164,8 @@ class _TracingScreenState extends State<TracingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue,
         title: const Text('TraceIT'),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             onPressed: () {
