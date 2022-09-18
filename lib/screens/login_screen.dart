@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
-import 'package:http/http.dart' as http;
-import 'package:traceit_app/const.dart';
+import 'package:http/http.dart';
+import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/screens/totp_screen.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
 import 'package:traceit_app/storage.dart';
@@ -61,15 +61,9 @@ class _LoginScreenState extends State<LoginScreen> {
     debugPrint('Password: ${loginData.password}');
 
     // Send login request to server
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/login'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'username': loginData.name,
-        'password': loginData.password,
-      }),
+    Response response = await ServerAuth.login(
+      loginData.name,
+      loginData.password,
     );
 
     debugPrint(response.body);
@@ -82,8 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
           responseBody['user']['tokens']['access'] as String;
 
       setState(() {
-        this._hasOtp = hasOtp;
-        this._tempAccessToken = tempAccessToken;
+        _hasOtp = hasOtp;
+        _tempAccessToken = tempAccessToken;
       });
       return null;
     } else if (response.statusCode >= 400 && response.statusCode < 500) {
@@ -102,18 +96,11 @@ class _LoginScreenState extends State<LoginScreen> {
         'Phone number: ${signupData.additionalSignupData!['phoneNumber']}');
 
     // Send register request to server
-    // Send login request to server
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/register'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'username': signupData.name!,
-        'password': signupData.password!,
-        'email': signupData.additionalSignupData!['email']!,
-        'phone_number': signupData.additionalSignupData!['phoneNumber']!,
-      }),
+    Response response = await ServerAuth.register(
+      signupData.name!,
+      signupData.password!,
+      signupData.additionalSignupData!['email'] as String,
+      signupData.additionalSignupData!['phoneNumber'] as String,
     );
 
     debugPrint('Signup response code: ${response.statusCode.toString()}');

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:traceit_app/const.dart';
+import 'package:http/http.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
+import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,15 +31,9 @@ class _TotpScreenState extends State<TotpScreen> {
     );
   }
 
-  Future<void> generateQrCode() async {
+  Future<void> registerTotp() async {
     // Request for TOTP QR code
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/totp/register'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer ${widget.tempAccessToken}',
-      },
-    );
+    Response response = await ServerAuth.totpRegister(widget.tempAccessToken);
 
     Map<String, dynamic> responseBody = jsonDecode(response.body);
 
@@ -102,7 +96,7 @@ class _TotpScreenState extends State<TotpScreen> {
                           Visibility(
                             visible: !_hasGeneratedQrCode,
                             child: ElevatedButton(
-                              onPressed: generateQrCode,
+                              onPressed: registerTotp,
                               child: const Text('Generate QR Code'),
                             ),
                           ),
@@ -196,15 +190,9 @@ class _TotpLoginState extends State<TotpLogin> {
     }
 
     // Send TOTP code to server
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/totp'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer ${widget.tempAccessToken}',
-      },
-      body: jsonEncode(<String, String>{
-        'totp': totpCode,
-      }),
+    Response response = await ServerAuth.totpLogin(
+      widget.tempAccessToken,
+      totpCode,
     );
 
     Map<String, dynamic> responseBody = jsonDecode(response.body);
