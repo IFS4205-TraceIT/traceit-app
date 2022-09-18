@@ -107,6 +107,11 @@ class _LoginScreenState extends State<LoginScreen> {
     debugPrint('Response body: ${response.body}');
 
     if (response.statusCode == 201) {
+      LoginData loginData = LoginData(
+        name: signupData.name!,
+        password: signupData.password!,
+      );
+      await onLogin(loginData);
       return null;
     } else if (response.statusCode >= 400 && response.statusCode < 500) {
       return 'Signup failed! Please check your credentials.';
@@ -115,7 +120,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  onAnimationCompleted() {
+  void onSubmitAnimationCompleted() {
+    // Navigate to TOTP screen
     Navigator.of(context).pushReplacement(MaterialPageRoute(
       builder: (context) => TotpScreen(
         hasOtp: _hasOtp,
@@ -135,7 +141,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return FlutterLogin(
       title: 'TraceIT',
       // logo: 'assets/images/logo.png',
-      loginAfterSignUp: false,
       hideForgotPasswordButton: true,
       userType: LoginUserType.name,
       messages: LoginMessages(
@@ -172,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       onLogin: (loginData) => onLogin(loginData),
       onSignup: (signUpData) => onSignUp(signUpData),
-      onSubmitAnimationCompleted: () => onAnimationCompleted(),
+      onSubmitAnimationCompleted: () => onSubmitAnimationCompleted(),
       onRecoverPassword: (name) {
         debugPrint('Recover password info');
         debugPrint('Name: $name');
