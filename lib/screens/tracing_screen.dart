@@ -1,8 +1,12 @@
 import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:traceit_app/screens/login_screen.dart';
+import 'package:traceit_app/server_auth.dart';
+import 'package:traceit_app/storage.dart';
 import 'package:traceit_app/tracing/central/ble_client.dart';
 import 'package:traceit_app/tracing/peripheral/gatt_server.dart';
 import 'package:traceit_app/tracing/peripheral/ble_advertiser.dart';
@@ -15,6 +19,8 @@ class TracingScreen extends StatefulWidget {
 }
 
 class _TracingScreenState extends State<TracingScreen> {
+  final Storage _storage = Storage();
+
   late String deviceModel;
 
   bool _peripheralServiceRunning = false;
@@ -132,6 +138,43 @@ class _TracingScreenState extends State<TracingScreen> {
     });
   }
 
+  Future<void> logout() async {
+    // Send logout request to server
+    Response response = await ServerAuth.logout();
+
+    if (response.statusCode == 204) {
+      // Stop tracing services
+      if (_peripheralServiceRunning) {
+        debugPrint('Stopping peripheral service');
+        await stopAdvertising();
+        await stopGattServer();
+      } else if (_centralServiceRunning) {
+        debugPrint('Stopping central service');
+        stopScanning();
+      }
+
+      // Delete tokens from storage
+      await _storage.deleteTokens();
+
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    } else {
+      debugPrint(response.body);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logout failed'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -164,8 +207,8 @@ class _TracingScreenState extends State<TracingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue,
         title: const Text('TraceIT'),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             onPressed: () {
@@ -177,6 +220,25 @@ class _TracingScreenState extends State<TracingScreen> {
             },
             icon: const Icon(Icons.qr_code_scanner_rounded),
             tooltip: 'Scan Building QR Code',
+          ),
+          PopupMenuButton(
+            itemBuilder: (context) {
+              return [
+                const PopupMenuItem(
+                  value: 1,
+                  child: Text('Logout'),
+                )
+              ];
+            },
+            onSelected: (value) {
+              switch (value) {
+                case 1:
+                  logout();
+                  break;
+                default:
+                  break;
+              }
+            },
           ),
         ],
       ),

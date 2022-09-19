@@ -7,6 +7,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:traceit_app/const.dart';
 
 class Storage {
+  // Auth keys
+  static const String _accessTokenKey = 'accessToken';
+  static const String _refreshTokenKey = 'refreshToken';
+
+  // Close contact tracing keys
   static const String _boxEncryptionKey = 'key';
   static const String _closeContactBoxName = 'closeContact';
   static const String _closeContactCountKey = 'closeContactCount';
@@ -96,5 +101,27 @@ class Storage {
     await _closeContactBox.add(closeContactData);
 
     _incrementCloseContactCount();
+  }
+
+  Future<Map<String, String?>> getTokens() async {
+    String? accessToken = await _secureStorage.read(key: _accessTokenKey);
+    String? refreshToken = await _secureStorage.read(key: _refreshTokenKey);
+
+    Map<String, String?> tokens = {
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+    };
+
+    return tokens;
+  }
+
+  Future<void> saveTokens(String accessToken, String refreshToken) async {
+    await _secureStorage.write(key: _accessTokenKey, value: accessToken);
+    await _secureStorage.write(key: _refreshTokenKey, value: refreshToken);
+  }
+
+  Future<void> deleteTokens() async {
+    await _secureStorage.delete(key: _accessTokenKey);
+    await _secureStorage.delete(key: _refreshTokenKey);
   }
 }
