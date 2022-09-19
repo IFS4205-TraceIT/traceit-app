@@ -115,6 +115,15 @@ class _TotpScreenState extends State<TotpScreen> {
                                 const Text('Scan the QR code in your TOTP app'),
                                 const Text('OR',
                                     style: TextStyle(fontSize: 20)),
+                                const SizedBox(
+                                  width: 300,
+                                  child: Text(
+                                    'Scan the QR code below to save the TOTP '
+                                    'or automatically add a TOTP account to '
+                                    'your TOTP app by pressing the button below.',
+                                    textAlign: TextAlign.justify,
+                                  ),
+                                ),
                                 ElevatedButton(
                                   onPressed: openInTotpApp,
                                   child: const Text('Open in TOTP app'),
