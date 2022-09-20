@@ -2,24 +2,38 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'login_screen.dart';
+
 class TotpScreen extends StatefulWidget {
-  const TotpScreen(
-      {super.key, required this.hasOtp, required this.tempAccessToken});
+  const TotpScreen({
+    super.key,
+    required this.hasOtp,
+    required this.tempAccessToken,
+    required this.tempRefreshToken,
+  });
 
   final bool hasOtp;
   final String tempAccessToken;
+  final String tempRefreshToken;
 
   @override
   State<TotpScreen> createState() => _TotpScreenState();
 }
 
 class _TotpScreenState extends State<TotpScreen> {
+  final Storage _storage = Storage();
+
   bool _hasGeneratedQrCode = false;
+
+  late String _tempAccessToken;
+  late String _tempRefreshToken;
+
   String _qrCode = '';
   String _otpauthUrl = '';
 
@@ -32,8 +46,45 @@ class _TotpScreenState extends State<TotpScreen> {
   }
 
   Future<void> registerTotp() async {
+    // Check if tokens need to be refreshed
+    bool hasAccessTokenExpired = JwtDecoder.isExpired(_tempAccessToken);
+    bool hasRefreshTokenExpired = JwtDecoder.isExpired(_tempRefreshToken);
+
+    if (hasAccessTokenExpired && !hasRefreshTokenExpired) {
+      // Refresh tokens
+      Response response = await ServerAuth.refreshToken(_tempRefreshToken);
+
+      if (response.statusCode == 200) {
+        debugPrint('Tokens refreshed');
+        Map<String, dynamic> responseBody = await jsonDecode(response.body);
+
+        setState(() {
+          _tempAccessToken = responseBody['access'];
+          _tempRefreshToken = responseBody['refresh'];
+        });
+
+        await _storage.saveTokens(
+          responseBody['access'],
+          responseBody['refresh'],
+        );
+      } else {
+        debugPrint(response.body);
+        showSnackbar('Token refresh error');
+      }
+    } else if (hasAccessTokenExpired && hasRefreshTokenExpired) {
+      showSnackbar('Session expired');
+
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+      return;
+    }
+
     // Request for TOTP QR code
-    Response response = await ServerAuth.totpRegister(widget.tempAccessToken);
+    Response response = await ServerAuth.totpRegister(_tempAccessToken);
 
     Map<String, dynamic> responseBody = jsonDecode(response.body);
 
@@ -62,6 +113,13 @@ class _TotpScreenState extends State<TotpScreen> {
       debugPrint('Failed to open TOTP app!');
       showSnackbar('Failed to open TOTP app!');
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _tempAccessToken = widget.tempAccessToken;
+    _tempRefreshToken = widget.tempRefreshToken;
   }
 
   @override
@@ -132,7 +190,8 @@ class _TotpScreenState extends State<TotpScreen> {
                                   child: const Text('Open in TOTP app'),
                                 ),
                                 TotpLogin(
-                                  tempAccessToken: widget.tempAccessToken,
+                                  tempAccessToken: _tempAccessToken,
+                                  tempRefreshToken: _tempRefreshToken,
                                 ),
                               ],
                             ),
@@ -157,7 +216,8 @@ class _TotpScreenState extends State<TotpScreen> {
                         style: TextStyle(fontSize: 20),
                       ),
                       TotpLogin(
-                        tempAccessToken: widget.tempAccessToken,
+                        tempAccessToken: _tempAccessToken,
+                        tempRefreshToken: _tempRefreshToken,
                       ),
                     ],
                   ),
@@ -172,9 +232,14 @@ class _TotpScreenState extends State<TotpScreen> {
 }
 
 class TotpLogin extends StatefulWidget {
-  const TotpLogin({super.key, required this.tempAccessToken});
+  const TotpLogin({
+    super.key,
+    required this.tempAccessToken,
+    required this.tempRefreshToken,
+  });
 
   final String tempAccessToken;
+  final String tempRefreshToken;
 
   @override
   State<TotpLogin> createState() => _TotpLoginState();
@@ -183,6 +248,9 @@ class TotpLogin extends StatefulWidget {
 class _TotpLoginState extends State<TotpLogin> {
   final Storage _storage = Storage();
   final _totpTextController = TextEditingController();
+
+  late String _tempAccessToken;
+  late String _tempRefreshToken;
 
   void showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -201,9 +269,46 @@ class _TotpLoginState extends State<TotpLogin> {
       return;
     }
 
+    // Check if tokens need to be refreshed
+    bool hasAccessTokenExpired = JwtDecoder.isExpired(_tempAccessToken);
+    bool hasRefreshTokenExpired = JwtDecoder.isExpired(_tempRefreshToken);
+
+    if (hasAccessTokenExpired && !hasRefreshTokenExpired) {
+      // Refresh tokens
+      Response response = await ServerAuth.refreshToken(_tempRefreshToken);
+
+      if (response.statusCode == 200) {
+        debugPrint('Tokens refreshed');
+        Map<String, dynamic> responseBody = await jsonDecode(response.body);
+
+        setState(() {
+          _tempAccessToken = responseBody['access'];
+          _tempRefreshToken = responseBody['refresh'];
+        });
+
+        await _storage.saveTokens(
+          responseBody['access'],
+          responseBody['refresh'],
+        );
+      } else {
+        debugPrint(response.body);
+        showSnackbar('Token refresh error');
+      }
+    } else if (hasAccessTokenExpired && hasRefreshTokenExpired) {
+      showSnackbar('Session expired');
+
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+      return;
+    }
+
     // Send TOTP code to server
     Response response = await ServerAuth.totpLogin(
-      widget.tempAccessToken,
+      _tempAccessToken,
       totpCode,
     );
 
@@ -230,6 +335,13 @@ class _TotpLoginState extends State<TotpLogin> {
       debugPrint(response.body);
       showSnackbar('Failed to login with TOTP!');
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _tempAccessToken = widget.tempAccessToken;
+    _tempRefreshToken = widget.tempAccessToken;
   }
 
   @override

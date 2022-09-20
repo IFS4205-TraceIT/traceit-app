@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -41,6 +44,16 @@ class _TracingScreenState extends State<TracingScreen> {
 
   late FBroadcast closeContactReceiver;
   int _closeContactCount = 0;
+
+  void showSnackbar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+        ),
+      );
+    }
+  }
 
   Future<void> getDeviceInfo() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -139,6 +152,37 @@ class _TracingScreenState extends State<TracingScreen> {
   }
 
   Future<void> logout() async {
+    // Check if tokens need to be refreshed
+    Map<String, String?> tokens = await _storage.getTokens();
+    bool hasAccessTokenExpired = JwtDecoder.isExpired(tokens['accessToken']!);
+    bool hasRefreshTokenExpired = JwtDecoder.isExpired(tokens['refreshToken']!);
+
+    if (hasAccessTokenExpired && !hasRefreshTokenExpired) {
+      // Refresh tokens
+      Response response =
+          await ServerAuth.refreshToken(tokens['refreshToken']!);
+
+      if (response.statusCode == 200) {
+        debugPrint('Tokens refreshed');
+        Map<String, dynamic> responseBody = await jsonDecode(response.body);
+        await _storage.saveTokens(
+          responseBody['access'],
+          responseBody['refresh'],
+        );
+      } else {
+        debugPrint(response.body);
+        showSnackbar('Token refresh error');
+      }
+    } else if (hasAccessTokenExpired && hasRefreshTokenExpired) {
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+      return;
+    }
+
     // Send logout request to server
     Response response = await ServerAuth.logout();
 
@@ -164,14 +208,7 @@ class _TracingScreenState extends State<TracingScreen> {
       }
     } else {
       debugPrint(response.body);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logout failed'),
-          ),
-        );
-      }
+      showSnackbar('Logout failed');
     }
   }
 

@@ -42,6 +42,20 @@ class ServerAuth {
     return response;
   }
 
+  static Future<http.Response> refreshToken(String refreshToken) async {
+    http.Response response = await http.post(
+      Uri.parse('$serverUrl/auth/refresh'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'refresh': refreshToken,
+      }),
+    );
+
+    return response;
+  }
+
   static Future<http.Response> logout() async {
     // Get tokens from storage
     final Storage storage = Storage();

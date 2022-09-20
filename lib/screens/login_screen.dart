@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _hasOtp = false;
   late String _tempAccessToken;
+  late String _tempRefreshToken;
 
   void checkIsLoggedIn() async {
     Map<String, String?> tokens = await _storage.getTokens();
@@ -74,10 +75,13 @@ class _LoginScreenState extends State<LoginScreen> {
       bool hasOtp = responseBody['user']['has_otp'] as bool;
       String tempAccessToken =
           responseBody['user']['tokens']['access'] as String;
+      String tempRefreshToken =
+          responseBody['user']['tokens']['refresh'] as String;
 
       setState(() {
         _hasOtp = hasOtp;
         _tempAccessToken = tempAccessToken;
+        _tempRefreshToken = tempRefreshToken;
       });
       return null;
     } else if (response.statusCode >= 400 && response.statusCode < 500) {
@@ -126,6 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context) => TotpScreen(
         hasOtp: _hasOtp,
         tempAccessToken: _tempAccessToken,
+        tempRefreshToken: _tempRefreshToken,
       ),
     ));
   }
