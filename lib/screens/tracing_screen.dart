@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -41,6 +44,16 @@ class _TracingScreenState extends State<TracingScreen> {
 
   late FBroadcast closeContactReceiver;
   int _closeContactCount = 0;
+
+  void showSnackbar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+        ),
+      );
+    }
+  }
 
   Future<void> getDeviceInfo() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -139,6 +152,38 @@ class _TracingScreenState extends State<TracingScreen> {
   }
 
   Future<void> logout() async {
+    // Check if tokens need to be refreshed
+    Map<String, String?> tokens = await _storage.getTokens();
+    Map<String, String>? refreshedTokens = await ServerAuth.checkRefreshToken(
+      tokens['accessToken']!,
+      tokens['refreshToken']!,
+    );
+
+    if (refreshedTokens != null) {
+      // Tokens not changed or refreshed
+      // Save tokens
+      await _storage.saveTokens(
+        refreshedTokens['accessToken']!,
+        refreshedTokens['refreshToken']!,
+      );
+    } else {
+      // Tokens invalid
+      debugPrint('Tokens invalid. Not refreshed.');
+      showSnackbar('Session expired');
+
+      // Delete tokens
+      await _storage.deleteTokens();
+
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+      return;
+    }
+
     // Send logout request to server
     Response response = await ServerAuth.logout();
 
@@ -164,14 +209,7 @@ class _TracingScreenState extends State<TracingScreen> {
       }
     } else {
       debugPrint(response.body);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logout failed'),
-          ),
-        );
-      }
+      showSnackbar('Logout failed');
     }
   }
 
