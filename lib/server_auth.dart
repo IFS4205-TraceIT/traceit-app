@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/storage.dart';
 
@@ -40,6 +42,42 @@ class ServerAuth {
     );
 
     return response;
+  }
+
+  static Future<Map<String, String>?> checkRefreshToken(
+    String accessToken,
+    String refreshToken,
+  ) async {
+    bool hasAccessTokenExpired = JwtDecoder.isExpired(accessToken);
+    bool hasRefreshTokenExpired = JwtDecoder.isExpired(refreshToken);
+
+    if (!hasAccessTokenExpired) {
+      return {
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
+    } else if (hasAccessTokenExpired && !hasRefreshTokenExpired) {
+      // Refresh tokens
+      http.Response response = await ServerAuth.refreshToken(refreshToken);
+
+      if (response.statusCode == 200) {
+        debugPrint('Tokens refreshed');
+        Map<String, dynamic> responseBody = await jsonDecode(response.body);
+        return {
+          'accessToken': responseBody['access'] as String,
+          'refreshToken': responseBody['refresh'] as String,
+        };
+      } else {
+        debugPrint(response.body);
+        return null;
+      }
+    } else if (hasAccessTokenExpired && hasRefreshTokenExpired) {
+      debugPrint('Refresh token expired');
+      return null;
+    }
+
+    debugPrint('Tokens invalid');
+    return null;
   }
 
   static Future<http.Response> refreshToken(String refreshToken) async {

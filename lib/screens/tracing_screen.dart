@@ -154,29 +154,30 @@ class _TracingScreenState extends State<TracingScreen> {
   Future<void> logout() async {
     // Check if tokens need to be refreshed
     Map<String, String?> tokens = await _storage.getTokens();
-    bool hasAccessTokenExpired = JwtDecoder.isExpired(tokens['accessToken']!);
-    bool hasRefreshTokenExpired = JwtDecoder.isExpired(tokens['refreshToken']!);
+    Map<String, String>? refreshedTokens = await ServerAuth.checkRefreshToken(
+      tokens['accessToken']!,
+      tokens['refreshToken']!,
+    );
 
-    if (hasAccessTokenExpired && !hasRefreshTokenExpired) {
-      // Refresh tokens
-      Response response =
-          await ServerAuth.refreshToken(tokens['refreshToken']!);
+    if (refreshedTokens != null) {
+      // Tokens not changed or refreshed
+      // Save tokens
+      await _storage.saveTokens(
+        refreshedTokens['accessToken']!,
+        refreshedTokens['refreshToken']!,
+      );
+    } else {
+      // Tokens invalid
+      debugPrint('Tokens invalid. Not refreshed.');
+      showSnackbar('Session expired');
 
-      if (response.statusCode == 200) {
-        debugPrint('Tokens refreshed');
-        Map<String, dynamic> responseBody = await jsonDecode(response.body);
-        await _storage.saveTokens(
-          responseBody['access'],
-          responseBody['refresh'],
-        );
-      } else {
-        debugPrint(response.body);
-        showSnackbar('Token refresh error');
-      }
-    } else if (hasAccessTokenExpired && hasRefreshTokenExpired) {
+      // Delete tokens
+      await _storage.deleteTokens();
+
       // Navigate to login screen
       if (mounted) {
-        Navigator.of(context).pushReplacement(
+        Navigator.pushReplacement(
+          context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }

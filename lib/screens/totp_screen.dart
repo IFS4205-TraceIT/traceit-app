@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage.dart';
@@ -47,36 +46,25 @@ class _TotpScreenState extends State<TotpScreen> {
 
   Future<void> registerTotp() async {
     // Check if tokens need to be refreshed
-    bool hasAccessTokenExpired = JwtDecoder.isExpired(_tempAccessToken);
-    bool hasRefreshTokenExpired = JwtDecoder.isExpired(_tempRefreshToken);
+    Map<String, String>? refreshedTokens = await ServerAuth.checkRefreshToken(
+      _tempAccessToken,
+      _tempRefreshToken,
+    );
 
-    if (hasAccessTokenExpired && !hasRefreshTokenExpired) {
-      // Refresh tokens
-      Response response = await ServerAuth.refreshToken(_tempRefreshToken);
-
-      if (response.statusCode == 200) {
-        debugPrint('Tokens refreshed');
-        Map<String, dynamic> responseBody = await jsonDecode(response.body);
-
-        setState(() {
-          _tempAccessToken = responseBody['access'];
-          _tempRefreshToken = responseBody['refresh'];
-        });
-
-        await _storage.saveTokens(
-          responseBody['access'],
-          responseBody['refresh'],
-        );
-      } else {
-        debugPrint(response.body);
-        showSnackbar('Token refresh error');
-      }
-    } else if (hasAccessTokenExpired && hasRefreshTokenExpired) {
+    if (refreshedTokens != null) {
+      setState(() {
+        _tempAccessToken = refreshedTokens['accessToken']!;
+        _tempRefreshToken = refreshedTokens['refreshToken']!;
+      });
+    } else {
+      // Tokens invalid
+      debugPrint('Tokens invalid. Not refreshed.');
       showSnackbar('Session expired');
 
       // Navigate to login screen
       if (mounted) {
-        Navigator.of(context).pushReplacement(
+        Navigator.pushReplacement(
+          context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
@@ -270,36 +258,25 @@ class _TotpLoginState extends State<TotpLogin> {
     }
 
     // Check if tokens need to be refreshed
-    bool hasAccessTokenExpired = JwtDecoder.isExpired(_tempAccessToken);
-    bool hasRefreshTokenExpired = JwtDecoder.isExpired(_tempRefreshToken);
+    Map<String, String>? refreshedTokens = await ServerAuth.checkRefreshToken(
+      _tempAccessToken,
+      _tempRefreshToken,
+    );
 
-    if (hasAccessTokenExpired && !hasRefreshTokenExpired) {
-      // Refresh tokens
-      Response response = await ServerAuth.refreshToken(_tempRefreshToken);
-
-      if (response.statusCode == 200) {
-        debugPrint('Tokens refreshed');
-        Map<String, dynamic> responseBody = await jsonDecode(response.body);
-
-        setState(() {
-          _tempAccessToken = responseBody['access'];
-          _tempRefreshToken = responseBody['refresh'];
-        });
-
-        await _storage.saveTokens(
-          responseBody['access'],
-          responseBody['refresh'],
-        );
-      } else {
-        debugPrint(response.body);
-        showSnackbar('Token refresh error');
-      }
-    } else if (hasAccessTokenExpired && hasRefreshTokenExpired) {
+    if (refreshedTokens != null) {
+      setState(() {
+        _tempAccessToken = refreshedTokens['accessToken']!;
+        _tempRefreshToken = refreshedTokens['refreshToken']!;
+      });
+    } else {
+      // Tokens invalid
+      debugPrint('Tokens invalid. Not refreshed.');
       showSnackbar('Session expired');
 
       // Navigate to login screen
       if (mounted) {
-        Navigator.of(context).pushReplacement(
+        Navigator.pushReplacement(
+          context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
