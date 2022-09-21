@@ -7,7 +7,7 @@ import 'package:http/http.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/screens/totp_screen.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
-import 'package:traceit_app/storage.dart';
+import 'package:traceit_app/storage/storage.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

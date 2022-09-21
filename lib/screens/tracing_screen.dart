@@ -1,15 +1,12 @@
-import 'dart:convert';
-
 import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:traceit_app/screens/login_screen.dart';
 import 'package:traceit_app/server_auth.dart';
-import 'package:traceit_app/storage.dart';
+import 'package:traceit_app/storage/storage.dart';
 import 'package:traceit_app/tracing/central/ble_client.dart';
 import 'package:traceit_app/tracing/peripheral/gatt_server.dart';
 import 'package:traceit_app/tracing/peripheral/ble_advertiser.dart';

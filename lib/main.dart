@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:traceit_app/screens/login_screen.dart';
-import 'package:traceit_app/storage_method_channel.dart';
+import 'package:traceit_app/storage/storage_method_channel.dart';
 
 void main() {
   runApp(const MyApp());
