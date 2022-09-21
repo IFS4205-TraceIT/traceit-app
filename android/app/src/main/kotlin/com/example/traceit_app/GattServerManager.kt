@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattCharacteristic.*
 import android.content.Context
 import com.google.gson.Gson
 import io.flutter.Log
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import java.util.*
 
@@ -83,13 +84,18 @@ class GattServerManager(context: Context) {
 
             Log.i(TAG, "onCharacteristicReadRequest from ${device.address}")
 
-            // TODO: check / update tempid is valid through flutter method channel
+            // Get valid temp id
+            val tempId: String = runBlocking {
+                TempIdMethodChannel.getTempId()
+            }
+            Log.i(TAG, "Temp ID: $tempId")
 
-            // TODO: Prepare payload
+            // Prepare payload
+            Log.i(TAG, "Sending response to ${device.address}")
             val payload: String = JSONObject()
                 .put(
                     "id",
-                    "4qS6+bFwTVhFNLeme/N2DMkAN2l6NgtbCELmPOict0/l0PmmGpkNliB8RicVjEZxWxtjFofUUNZCkUJrbEYAqyA1t7zCQGmfHQPEO5+M2VBeRJCOgEmeVeQE97FKFtvTVA=="
+                    tempId
                 )
                 .toString(0)
                 .replace("[\n\r]", "")

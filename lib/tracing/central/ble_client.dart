@@ -9,7 +9,7 @@ import 'package:traceit_app/storage/storage.dart';
 class BLEClient {
   final Storage storage = Storage();
 
-  final FlutterReactiveBle _ble_client = FlutterReactiveBle();
+  final FlutterReactiveBle _bleClient = FlutterReactiveBle();
   late StreamSubscription? _scanStream;
   bool _isScanning = false;
 
@@ -42,7 +42,7 @@ class BLEClient {
     stopScan();
 
     // Connect to GATT server
-    _currentConnection = _ble_client
+    _currentConnection = _bleClient
         .connectToAdvertisingDevice(
       id: device.id,
       withServices: [Uuid.parse(serviceUuid)],
@@ -68,24 +68,25 @@ class BLEClient {
         break;
       case DeviceConnectionState.connected:
         // Request larger MTU
-        int mtu = await _ble_client.requestMtu(
+        int mtu = await _bleClient.requestMtu(
             deviceId: connectionState.deviceId, mtu: 247);
         debugPrint('Negotiated MTU: $mtu');
 
         // Read characteristic data
-        List<int> readData =
-            await _ble_client.readCharacteristic(QualifiedCharacteristic(
-          serviceId: Uuid.parse(serviceUuid),
-          characteristicId: Uuid.parse(characteristicUuid),
-          deviceId: connectionState.deviceId,
-        ));
+        List<int> readData = await _bleClient.readCharacteristic(
+          QualifiedCharacteristic(
+            serviceId: Uuid.parse(serviceUuid),
+            characteristicId: Uuid.parse(characteristicUuid),
+            deviceId: connectionState.deviceId,
+          ),
+        );
 
         // TODO: save data to device
         Map receivedData = jsonDecode(utf8.decode(readData));
         await storage.writeCloseContact(receivedData['id'], rssi);
         debugPrint('Received characteristic data : ${receivedData.toString()}');
 
-        // TODO: check if current tempid is valid
+        // TODO: check if current temp ID is valid
 
         // Prepare write characteristic data
         Map<String, dynamic> writeData = {
@@ -97,7 +98,7 @@ class BLEClient {
         debugPrint('Characteristic write data: ${jsonEncode(writeData)}');
 
         // Write characteristic data
-        await _ble_client.writeCharacteristicWithResponse(
+        await _bleClient.writeCharacteristicWithResponse(
           QualifiedCharacteristic(
             serviceId: Uuid.parse(serviceUuid),
             characteristicId: Uuid.parse(characteristicUuid),
@@ -136,7 +137,7 @@ class BLEClient {
   void startScan() {
     debugPrint('Scan started for service UUID $serviceUuid');
 
-    _scanStream = _ble_client.scanForDevices(
+    _scanStream = _bleClient.scanForDevices(
         withServices: [Uuid.parse(serviceUuid)],
         scanMode: ScanMode.balanced).listen(
       ((device) => _onScanResult(device)),

@@ -22,7 +22,7 @@ class StorageMethodChannel {
     switch (call.method) {
       case 'writeCloseContact':
         await _storage.writeCloseContact(
-            arguments['tempid'], arguments['rssi']);
+            arguments['tempId'], arguments['rssi']);
         break;
       default:
         debugPrint('No method handler for method ${call.method}');
