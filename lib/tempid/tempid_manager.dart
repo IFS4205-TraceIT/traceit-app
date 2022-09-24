@@ -14,17 +14,15 @@ class TempIdManager {
       return false;
     }
 
-    int epochNow = DateTime.now().millisecondsSinceEpoch;
+    int epochNow = DateTime.now().millisecondsSinceEpoch ~/
+        Duration.millisecondsPerSecond; // in seconds
     int epochStart = tempId['start'];
     int epochEnd = tempId['end'];
-    return epochNow >= epochStart && epochNow < epochEnd;
+    return (epochNow >= epochStart) && (epochNow < epochEnd);
   }
 
   Future<String> getTempId() async {
     late Map<String, dynamic>? tempId;
-
-    // TODO: Remove hardcoded value
-    return '4qS6+bFwTVhFNLeme/N2DMkAN2l6NgtbCELmPOict0/l0PmmGpkNliB8RicVjEZxWxtjFofUUNZCkUJrbEYAqyA1t7zCQGmfHQPEO5+M2VBeRJCOgEmeVeQE97FKFtvTVA==';
 
     do {
       tempId = _storage.getOldestTempId();
@@ -41,19 +39,39 @@ class TempIdManager {
           tokens['refreshToken']!,
         );
 
-        // TODO: Test with server response
+        if (refreshedTokens != null) {
+          // Tokens not changed or refreshed
+          // Save tokens
+          await _storage.saveTokens(
+            refreshedTokens['accessToken']!,
+            refreshedTokens['refreshToken']!,
+          );
+        } else {
+          // Tokens invalid
+          debugPrint('Tokens invalid. Not refreshed.');
+
+          // Delete tokens
+          await _storage.deleteTokens();
+
+          return '';
+        }
+
+        // Send request to server to get new temp IDs
+        debugPrint('Send request to server to get new temp IDs');
         http.Response response = await http.get(
-          Uri.parse('$serverUrl/tempids'),
+          Uri.parse('$serverUrl/contacts/temp_id'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
-            'Authorization': 'Bearer ${refreshedTokens!['accessToken']}',
+            'Authorization': 'Bearer ${refreshedTokens['accessToken']}',
           },
         );
 
         if (response.statusCode == 200) {
           Map<String, dynamic> responseBody = jsonDecode(response.body);
-          List<Map<String, dynamic>> tempIds = responseBody['tempIds'];
-          debugPrint('Temp IDs: $tempIds');
+          List<Map<String, dynamic>> tempIds =
+              List<Map<String, dynamic>>.from(responseBody['temp_ids']);
+          int serverEpoch = responseBody['server_start_time'];
+          // debugPrint('Temp IDs: $tempIds');
 
           tempId = tempIds[0];
           debugPrint('New temp ID: $tempId');
@@ -74,6 +92,6 @@ class TempIdManager {
       }
     } while (!_isTempIdValid(tempId));
 
-    return tempId!['tempId'];
+    return tempId!['temp_id'];
   }
 }

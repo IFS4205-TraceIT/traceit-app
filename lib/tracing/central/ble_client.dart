@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/storage/storage.dart';
+import 'package:traceit_app/tempid/tempid_manager.dart';
 
 class BLEClient {
   final Storage storage = Storage();
+  final TempIdManager tempIdManager = TempIdManager();
 
   final FlutterReactiveBle _bleClient = FlutterReactiveBle();
   late StreamSubscription? _scanStream;
@@ -81,17 +83,15 @@ class BLEClient {
           ),
         );
 
-        // TODO: save data to device
+        // Save data to device
         Map receivedData = jsonDecode(utf8.decode(readData));
         await storage.writeCloseContact(receivedData['id'], rssi);
         debugPrint('Received characteristic data : ${receivedData.toString()}');
 
-        // TODO: check if current temp ID is valid
-
         // Prepare write characteristic data
+        String tempId = await tempIdManager.getTempId();
         Map<String, dynamic> writeData = {
-          'id':
-              '4qS6+bFwTVtDZOuhI6dxDJwBZmt6Nl1UVULmOraUtxu20qn1T5BcmXF9GycVjEZxWxtjFofUUNZCkUJrbEYAqyA1t7zCQGmfHQPEO5+M2VBeJIs4BabrCfAi6x8evBSpKQ==',
+          'id': tempId,
           'rssi': rssi,
         };
 

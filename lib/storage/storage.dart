@@ -128,7 +128,7 @@ class Storage {
       return null;
     }
 
-    return _tempIdBox.getAt(0);
+    return Map<String, dynamic>.from(_tempIdBox.getAt(0));
   }
 
   void deleteOldestTempId() {
