@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
 import 'package:traceit_app/server_auth.dart';
-import 'package:traceit_app/storage.dart';
+import 'package:traceit_app/storage/storage.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'login_screen.dart';

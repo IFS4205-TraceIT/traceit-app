@@ -15,8 +15,17 @@ class MainActivity : FlutterActivity() {
 
         gattServerManager = GattServerManager(applicationContext)
 
-        configureGattMethodChannel(flutterEngine)
         configureStorageMethodChannel(flutterEngine)
+        configureTempIdMethodChannel(flutterEngine)
+        configureGattMethodChannel(flutterEngine)
+    }
+
+    private fun configureStorageMethodChannel(flutterEngine: FlutterEngine) {
+        StorageMethodChannel.configureChannel(flutterEngine)
+    }
+
+    private fun configureTempIdMethodChannel(flutterEngine: FlutterEngine) {
+        TempIdMethodChannel.configureChannel(flutterEngine)
     }
 
     private fun configureGattMethodChannel(flutterEngine: FlutterEngine) {
@@ -41,9 +50,5 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
-    }
-
-    private fun configureStorageMethodChannel(flutterEngine: FlutterEngine) {
-        StorageMethodChannel.configureChannel(flutterEngine)
     }
 }

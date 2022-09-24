@@ -14,9 +14,9 @@ object StorageMethodChannel : FlutterActivity() {
             MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL_NAME_STORAGE)
     }
 
-    fun writeCloseContact(tempid: String, rssi: Int) {
+    fun writeCloseContact(tempId: String, rssi: Int) {
         val arguments: Map<String, Any> = mapOf(
-            "tempid" to tempid,
+            "tempId" to tempId,
             "rssi" to rssi
         )
 

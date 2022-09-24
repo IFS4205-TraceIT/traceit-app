@@ -1,15 +1,12 @@
-import 'dart:convert';
-
 import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/screens/buildingaccess_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:traceit_app/screens/login_screen.dart';
 import 'package:traceit_app/server_auth.dart';
-import 'package:traceit_app/storage.dart';
+import 'package:traceit_app/storage/storage.dart';
 import 'package:traceit_app/tracing/central/ble_client.dart';
 import 'package:traceit_app/tracing/peripheral/gatt_server.dart';
 import 'package:traceit_app/tracing/peripheral/ble_advertiser.dart';
@@ -24,7 +21,7 @@ class TracingScreen extends StatefulWidget {
 class _TracingScreenState extends State<TracingScreen> {
   final Storage _storage = Storage();
 
-  late String deviceModel;
+  late String _deviceModel;
 
   bool _peripheralServiceRunning = false;
   bool _centralServiceRunning = false;
@@ -42,7 +39,7 @@ class _TracingScreenState extends State<TracingScreen> {
   final BLEClient _bleClient = BLEClient();
   bool _bleScanning = false;
 
-  late FBroadcast closeContactReceiver;
+  late FBroadcast _closeContactReceiver;
   int _closeContactCount = 0;
 
   void showSnackbar(String message) {
@@ -59,7 +56,7 @@ class _TracingScreenState extends State<TracingScreen> {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
     setState(() {
-      deviceModel = androidInfo.model!;
+      _deviceModel = androidInfo.model!;
     });
     debugPrint('Running on ${androidInfo.model}');
   }
@@ -221,7 +218,7 @@ class _TracingScreenState extends State<TracingScreen> {
       checkAdvertisingSupport();
 
       // TODO: remove at a later point
-      if (deviceModel == 'SM-N920I') {
+      if (_deviceModel == 'SM-N920I') {
         // Peripheral
         startPeripheralService();
       } else {
@@ -231,7 +228,7 @@ class _TracingScreenState extends State<TracingScreen> {
     });
 
     // Register broadcast receiver for close contact count
-    FBroadcast.instance().register(
+    _closeContactReceiver = FBroadcast.instance().register(
       closeContactBroadcastKey,
       ((value, callback) {
         setState(() {

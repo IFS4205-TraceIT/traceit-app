@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:traceit_app/storage.dart';
+import 'package:traceit_app/storage/storage.dart';
 
 class StorageMethodChannel {
   static const _channelNameStorage = 'com.traceit.traceit_app/storage';
   late MethodChannel _methodChannel;
 
-  final Storage storage = Storage();
+  final Storage _storage = Storage();
 
   static final StorageMethodChannel instance = StorageMethodChannel._init();
   StorageMethodChannel._init();
 
   void configureChannel() {
     _methodChannel = const MethodChannel(_channelNameStorage);
-    _methodChannel.setMethodCallHandler(this._methodHandler);
+    _methodChannel.setMethodCallHandler(_methodHandler);
   }
 
   Future<void> _methodHandler(MethodCall call) async {
@@ -21,7 +21,8 @@ class StorageMethodChannel {
 
     switch (call.method) {
       case 'writeCloseContact':
-        await storage.writeCloseContact(arguments['tempid'], arguments['rssi']);
+        await _storage.writeCloseContact(
+            arguments['tempId'], arguments['rssi']);
         break;
       default:
         debugPrint('No method handler for method ${call.method}');
