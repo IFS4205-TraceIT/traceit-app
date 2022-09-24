@@ -2,8 +2,9 @@ import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:traceit_app/const.dart';
-import 'package:traceit_app/screens/buildingaccess_screen.dart';
+import 'package:traceit_app/screens/building_access_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:traceit_app/screens/contact_upload_screen.dart';
 import 'package:traceit_app/screens/login_screen.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage/storage.dart';
@@ -246,15 +247,17 @@ class _TracingScreenState extends State<TracingScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
+            onPressed: () => {
+              // Navigate to contact upload screen
+              Navigator.push(
+                context,
                 MaterialPageRoute(
-                  builder: ((context) => const QRCodeScannerScreen()),
+                  builder: (context) => const ContactUploadScreen(),
                 ),
-              );
+              ),
             },
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            tooltip: 'Scan Building QR Code',
+            icon: const Icon(Icons.upload),
+            tooltip: 'Upload close contact data',
           ),
           PopupMenuButton(
             itemBuilder: (context) {
@@ -276,6 +279,18 @@ class _TracingScreenState extends State<TracingScreen> {
             },
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to scanner screen
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: ((context) => const BuildingAccessScreen()),
+            ),
+          );
+        },
+        tooltip: 'Scan Building QR Code',
+        child: const Icon(Icons.qr_code_scanner_rounded),
       ),
       body: Center(
         child: Wrap(
