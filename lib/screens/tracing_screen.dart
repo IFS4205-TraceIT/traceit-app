@@ -81,6 +81,10 @@ class _TracingScreenState extends State<TracingScreen> {
       _bleAdvertisementSupported = advertisementSupported;
     });
 
+    if (await _bleAdvertiser.isAdvertising()) {
+      await _bleAdvertiser.stopAdvertising();
+    }
+
     await startAdvertising();
     await startGattServer();
   }
