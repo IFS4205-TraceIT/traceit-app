@@ -32,11 +32,12 @@ class BLEClient {
     //     device.manufacturerData.sublist(2, device.manufacturerData.length));
     // debugPrint('$manufacturerId $manufacturerData');
 
-    // TODO: Check if device is already in discovered list
-    // if (!_discoveredDevices.contains(device.id)) {
-    // _discoveredDevices.add(device.id);
-    _connectToDevice(device);
-    // }
+    // TODO: Connect only if device not previously connected
+    if (!_discoveredDevices.contains(device.id)) {
+      _connectToDevice(device);
+    } else {
+      debugPrint('Device ${device.id} already in discovered list');
+    }
   }
 
   void _connectToDevice(DiscoveredDevice device) {
@@ -69,19 +70,29 @@ class BLEClient {
       case DeviceConnectionState.connecting:
         break;
       case DeviceConnectionState.connected:
+        bool readSuccess = false;
+        bool writeSuccess = false;
+
         // Request larger MTU
         int mtu = await _bleClient.requestMtu(
             deviceId: connectionState.deviceId, mtu: 247);
         debugPrint('Negotiated MTU: $mtu');
 
         // Read characteristic data
-        List<int> readData = await _bleClient.readCharacteristic(
-          QualifiedCharacteristic(
-            serviceId: Uuid.parse(serviceUuid),
-            characteristicId: Uuid.parse(characteristicUuid),
-            deviceId: connectionState.deviceId,
-          ),
-        );
+        late List<int> readData;
+        try {
+          readData = await _bleClient.readCharacteristic(
+            QualifiedCharacteristic(
+              serviceId: Uuid.parse(serviceUuid),
+              characteristicId: Uuid.parse(characteristicUuid),
+              deviceId: connectionState.deviceId,
+            ),
+          );
+
+          readSuccess = true;
+        } catch (e) {
+          debugPrint('Error reading characteristic: $e');
+        }
 
         // Save data to device
         Map receivedData = jsonDecode(utf8.decode(readData));
@@ -98,18 +109,29 @@ class BLEClient {
         debugPrint('Characteristic write data: ${jsonEncode(writeData)}');
 
         // Write characteristic data
-        await _bleClient.writeCharacteristicWithResponse(
-          QualifiedCharacteristic(
-            serviceId: Uuid.parse(serviceUuid),
-            characteristicId: Uuid.parse(characteristicUuid),
-            deviceId: connectionState.deviceId,
-          ),
-          value: jsonEncode(writeData).codeUnits,
-        );
+        try {
+          await _bleClient.writeCharacteristicWithResponse(
+            QualifiedCharacteristic(
+              serviceId: Uuid.parse(serviceUuid),
+              characteristicId: Uuid.parse(characteristicUuid),
+              deviceId: connectionState.deviceId,
+            ),
+            value: jsonEncode(writeData).codeUnits,
+          );
+
+          writeSuccess = true;
+        } catch (e) {
+          debugPrint('Error writing characteristic: $e');
+        }
 
         // Disconnect from GATT server
         _currentConnection!.cancel();
         _currentConnection = null;
+
+        // Add device to discovered list
+        if (readSuccess && writeSuccess) {
+          _discoveredDevices.add(connectionState.deviceId);
+        }
 
         // Starting from Android 7 you could not start the BLE scan more than
         // 5 times per 30 seconds
