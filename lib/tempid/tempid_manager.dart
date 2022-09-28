@@ -32,27 +32,8 @@ class TempIdManager {
         // No temp IDs available. Request new temp IDs from server.
         debugPrint('No temp IDs available. Request new temp IDs from server.');
 
-        Map<String, String?> tokens = await _storage.getTokens();
-        Map<String, String>? refreshedTokens =
-            await ServerAuth.checkRefreshToken(
-          tokens['accessToken']!,
-          tokens['refreshToken']!,
-        );
-
-        if (refreshedTokens != null) {
-          // Tokens not changed or refreshed
-          // Save tokens
-          await _storage.saveTokens(
-            refreshedTokens['accessToken']!,
-            refreshedTokens['refreshToken']!,
-          );
-        } else {
-          // Tokens invalid
-          debugPrint('Tokens invalid. Not refreshed.');
-
-          // Delete tokens
-          await _storage.deleteTokens();
-
+        Map<String, String>? tokens = await ServerAuth.getTokens();
+        if (tokens == null) {
           return '';
         }
 
@@ -62,7 +43,7 @@ class TempIdManager {
           Uri.parse('$serverUrl/contacts/temp_id'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
-            'Authorization': 'Bearer ${refreshedTokens['accessToken']}',
+            'Authorization': 'Bearer ${tokens['accessToken']}',
           },
         );
 

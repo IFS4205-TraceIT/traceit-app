@@ -7,7 +7,9 @@ import 'package:traceit_app/const.dart';
 import 'package:traceit_app/storage/storage.dart';
 
 class ServerAuth {
-  static Future<http.Response> register(
+  static final Storage _storage = Storage();
+
+  static Future<int> register(
     String username,
     String password,
     String email,
@@ -26,10 +28,14 @@ class ServerAuth {
       }),
     );
 
-    return response;
+    debugPrint('Signup response code: ${response.statusCode.toString()}');
+    debugPrint('Response body: ${response.body}');
+
+    return response.statusCode;
   }
 
-  static Future<http.Response> login(String username, String password) async {
+  static Future<Map<String, dynamic>> login(
+      String username, String password) async {
     http.Response response = await http.post(
       Uri.parse('$serverUrl/auth/login'),
       headers: <String, String>{
@@ -41,43 +47,27 @@ class ServerAuth {
       }),
     );
 
-    return response;
-  }
+    debugPrint(response.body);
 
-  static Future<Map<String, String>?> checkRefreshToken(
-    String accessToken,
-    String refreshToken,
-  ) async {
-    bool hasAccessTokenExpired = JwtDecoder.isExpired(accessToken);
-    bool hasRefreshTokenExpired = JwtDecoder.isExpired(refreshToken);
+    Map<String, dynamic> loginStatus = {
+      'statusCode': response.statusCode,
+    };
 
-    if (!hasAccessTokenExpired) {
-      return {
-        'accessToken': accessToken,
-        'refreshToken': refreshToken,
-      };
-    } else if (hasAccessTokenExpired && !hasRefreshTokenExpired) {
-      // Refresh tokens
-      http.Response response = await ServerAuth.refreshToken(refreshToken);
+    if (response.statusCode == 200) {
+      Map<String, dynamic> responseBody = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        debugPrint('Tokens refreshed');
-        Map<String, dynamic> responseBody = await jsonDecode(response.body);
-        return {
-          'accessToken': responseBody['access'] as String,
-          'refreshToken': responseBody['refresh'] as String,
-        };
-      } else {
-        debugPrint(response.body);
-        return null;
-      }
-    } else if (hasAccessTokenExpired && hasRefreshTokenExpired) {
-      debugPrint('Refresh token expired');
-      return null;
+      bool hasOtp = responseBody['user']['has_otp'] as bool;
+      String tempAccessToken =
+          responseBody['user']['tokens']['access'] as String;
+      String tempRefreshToken =
+          responseBody['user']['tokens']['refresh'] as String;
+
+      loginStatus['hasOtp'] = hasOtp;
+      loginStatus['tempAccessToken'] = tempAccessToken;
+      loginStatus['tempRefreshToken'] = tempRefreshToken;
     }
 
-    debugPrint('Tokens invalid');
-    return null;
+    return loginStatus;
   }
 
   static Future<http.Response> refreshToken(String refreshToken) async {
@@ -94,10 +84,58 @@ class ServerAuth {
     return response;
   }
 
-  static Future<http.Response> logout() async {
+  static Future<Map<String, String>?> getTokens() async {
+    Map<String, String?> tokens = await _storage.getTokens();
+    String? accessToken = tokens['accessToken'];
+    String? refreshToken = tokens['refreshToken'];
+
+    if (accessToken == null || refreshToken == null) {
+      // No tokens stored
+      return null;
+    } else if (!JwtDecoder.isExpired(accessToken) &&
+        !JwtDecoder.isExpired(refreshToken)) {
+      // Tokens are not expired and valid
+      return {
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
+    }
+
+    // Tokens are expired
+    // Refresh tokens
+    http.Response response = await ServerAuth.refreshToken(refreshToken);
+
+    if (response.statusCode == 200) {
+      debugPrint('Tokens refreshed');
+      Map<String, dynamic> responseBody = await jsonDecode(response.body);
+      String accessToken = responseBody['access'] as String;
+      String refreshToken = responseBody['refresh'] as String;
+
+      // Store new tokens
+      await _storage.saveTokens(accessToken, refreshToken);
+
+      return {
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
+    } else {
+      // Tokens invalid
+      debugPrint(response.body);
+      debugPrint('Tokens invalid. Not refreshed.');
+
+      // Delete tokens
+      await _storage.deleteTokens();
+
+      return null;
+    }
+  }
+
+  static Future<bool> logout() async {
     // Get tokens from storage
-    final Storage storage = Storage();
-    Map<String, String?> tokens = await storage.getTokens();
+    Map<String, String>? tokens = await getTokens();
+    if (tokens == null) {
+      return false;
+    }
 
     http.Response response = await http.post(
       Uri.parse('$serverUrl/auth/logout'),
@@ -110,10 +148,13 @@ class ServerAuth {
       }),
     );
 
-    return response;
+    debugPrint(response.body);
+
+    return response.statusCode == 204;
   }
 
-  static Future<http.Response> totpRegister(String tempAccessToken) async {
+  static Future<Map<String, dynamic>?> totpRegister(
+      String tempAccessToken) async {
     http.Response response = await http.post(
       Uri.parse('$serverUrl/auth/totp/register'),
       headers: <String, String>{
@@ -122,10 +163,26 @@ class ServerAuth {
       },
     );
 
-    return response;
+    if (response.statusCode == 200) {
+      Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      String qrCode = responseBody['barcode'] as String;
+      String otpauthUrl = responseBody['url'] as String;
+      debugPrint('QR Code: $qrCode');
+      debugPrint('OTPAuth URL: $otpauthUrl');
+
+      return {
+        'hasGeneratedQrCode': true,
+        'qrCode': qrCode,
+        'otpauthUrl': otpauthUrl,
+      };
+    } else {
+      debugPrint(response.body);
+      return null;
+    }
   }
 
-  static Future<http.Response> totpLogin(
+  static Future<bool> totpLogin(
     String tempAccessToken,
     String totpCode,
   ) async {
@@ -140,6 +197,21 @@ class ServerAuth {
       }),
     );
 
-    return response;
+    if (response.statusCode == 200) {
+      Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      String accessToken = responseBody['access'] as String;
+      String refreshToken = responseBody['refresh'] as String;
+      debugPrint('Access token: $accessToken');
+      debugPrint('Refresh token: $refreshToken');
+
+      // Save access token to shared preferences
+      _storage.saveTokens(accessToken, refreshToken);
+
+      return true;
+    } else {
+      debugPrint(response.body);
+      return false;
+    }
   }
 }
