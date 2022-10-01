@@ -16,13 +16,19 @@ class ContactUploadManager {
     }
 
     // Get contact status from server
-    http.Response response = await http.get(
-      Uri.parse('$serverUrl/contacts/status'),
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer ${tokens['accessToken']}',
-      },
-    );
+    http.Response response = await http
+        .get(
+          Uri.parse('$serverUrl/contacts/status'),
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer ${tokens['accessToken']}',
+          },
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+          debugPrint('Error retrieving contact status: $error');
+          return http.Response('408 Request Timeout', 408);
+        });
     debugPrint(response.body);
 
     if (response.statusCode == 200) {
@@ -46,13 +52,19 @@ class ContactUploadManager {
 
     // Get upload status from server
     debugPrint('Sending request to server to get upload status');
-    http.Response response = await http.get(
-      Uri.parse('$serverUrl/contacts/upload/status'),
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer ${tokens['accessToken']}',
-      },
-    );
+    http.Response response = await http
+        .get(
+          Uri.parse('$serverUrl/contacts/upload/status'),
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer ${tokens['accessToken']}',
+          },
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+          debugPrint('Error retrieving upload staus: $error');
+          return http.Response('408 Request Timeout', 408);
+        });
     debugPrint(response.body);
 
     if (response.statusCode == 200) {
@@ -91,16 +103,22 @@ class ContactUploadManager {
     // Upload close contacts to server
     debugPrint('Uploading close contacts to server');
 
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/contacts/upload'),
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer ${tokens['accessToken']}',
-      },
-      body: jsonEncode({
-        'temp_ids': payload,
-      }),
-    );
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/contacts/upload'),
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer ${tokens['accessToken']}',
+          },
+          body: jsonEncode({
+            'temp_ids': payload,
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+      debugPrint('Error uploading close contacts: $error');
+      return http.Response('408 Request Timeout', 408);
+    });
 
     if (response.statusCode == 201) {
       // Close contacts uploaded successfully

@@ -15,18 +15,24 @@ class ServerAuth {
     String email,
     String phoneNumber,
   ) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/register'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'username': username,
-        'password': password,
-        'email': email,
-        'phone_number': phoneNumber,
-      }),
-    );
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/register'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, String>{
+            'username': username,
+            'password': password,
+            'email': email,
+            'phone_number': phoneNumber,
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+      debugPrint('Error during registration: $error');
+      return http.Response('408 Request Timeout', 408);
+    });
 
     debugPrint('Signup response code: ${response.statusCode.toString()}');
     debugPrint('Response body: ${response.body}');
@@ -36,16 +42,22 @@ class ServerAuth {
 
   static Future<Map<String, dynamic>> login(
       String username, String password) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/login'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'username': username,
-        'password': password,
-      }),
-    );
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/login'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, String>{
+            'username': username,
+            'password': password,
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+      debugPrint('Error during login: $error');
+      return http.Response('408 Request Timeout', 408);
+    });
 
     debugPrint(response.body);
 
@@ -71,14 +83,22 @@ class ServerAuth {
   }
 
   static Future<http.Response> refreshToken(String refreshToken) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/refresh'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/refresh'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, String>{
+            'refresh': refreshToken,
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError(
+      (error, stackTrace) {
+        debugPrint('Error refreshing token: $error');
+        return http.Response('408 Request Timeout', 408);
       },
-      body: jsonEncode(<String, String>{
-        'refresh': refreshToken,
-      }),
     );
 
     return response;
@@ -91,6 +111,7 @@ class ServerAuth {
 
     if (accessToken == null || refreshToken == null) {
       // No tokens stored
+      debugPrint('No tokens stored');
       return null;
     } else if (!JwtDecoder.isExpired(accessToken) &&
         !JwtDecoder.isExpired(refreshToken)) {
@@ -137,16 +158,22 @@ class ServerAuth {
       return false;
     }
 
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/logout'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer ${tokens['accessToken']}',
-      },
-      body: jsonEncode(<String, String?>{
-        'refresh': tokens['refreshToken'],
-      }),
-    );
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/logout'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer ${tokens['accessToken']}',
+          },
+          body: jsonEncode(<String, String?>{
+            'refresh': tokens['refreshToken'],
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+      debugPrint('Error during logout: $error');
+      return http.Response('408 Request Timeout', 408);
+    });
 
     debugPrint(response.body);
 
@@ -155,13 +182,19 @@ class ServerAuth {
 
   static Future<Map<String, dynamic>?> totpRegister(
       String tempAccessToken) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/totp/register'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $tempAccessToken',
-      },
-    );
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/totp/register'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer $tempAccessToken',
+          },
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+          debugPrint('Error during TOTP registration: $error');
+          return http.Response('408 Request Timeout', 408);
+        });
 
     if (response.statusCode == 200) {
       Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -186,16 +219,22 @@ class ServerAuth {
     String tempAccessToken,
     String totpCode,
   ) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/totp'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $tempAccessToken',
-      },
-      body: jsonEncode(<String, String>{
-        'totp': totpCode,
-      }),
-    );
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/totp'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer $tempAccessToken',
+          },
+          body: jsonEncode(<String, String>{
+            'totp': totpCode,
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+      debugPrint('Error during TOTP login: $error');
+      return http.Response('408 Request Timeout', 408);
+    });
 
     if (response.statusCode == 200) {
       Map<String, dynamic> responseBody = jsonDecode(response.body);
