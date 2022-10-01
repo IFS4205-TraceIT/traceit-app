@@ -177,7 +177,7 @@ class Storage {
     Map<String, dynamic> closeContactData = {
       'tempId': tempId,
       'rssi': rssi,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     };
 
     await _closeContactBox.add(closeContactData);
