@@ -181,12 +181,11 @@ class GattServerManager(context: Context) {
             val receivedData = String(value, Charsets.UTF_8)
             Log.i(TAG, "Received write data: $receivedData")
 
-            val writeData: Map<String, Any> = Gson().fromJson(
+            // Save write data\
+            val dataToSave: Map<String, Any> = Gson().fromJson(
                 receivedData, HashMap<String, Any>().javaClass
             )
-
-            // Save write data
-            saveDataReceived(writeData)
+            saveDataReceived(dataToSave)
 
             // Send acknowledgement response
             bluetoothGattServer?.sendResponse(
