@@ -1,6 +1,7 @@
 import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
 import 'package:traceit_app/const.dart';
+import 'package:traceit_app/contact_upload_manager.dart';
 import 'package:traceit_app/screens/building_access_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:traceit_app/screens/contact_upload_screen.dart';
@@ -41,6 +42,9 @@ class _TracingScreenState extends State<TracingScreen> {
 
   late FBroadcast _closeContactReceiver;
   int _closeContactCount = 0;
+
+  ContactUploadManager _contactUploadManager = ContactUploadManager();
+  String _contactStatus = '';
 
   void showSnackbar(String message) {
     if (mounted) {
@@ -159,6 +163,9 @@ class _TracingScreenState extends State<TracingScreen> {
       debugPrint('Tokens invalid. Not refreshed.');
       showSnackbar('Session expired');
 
+      // Delete temp IDs
+      _storage.deleteAllTempIds();
+
       // Delete tokens
       await _storage.deleteTokens();
 
@@ -208,6 +215,39 @@ class _TracingScreenState extends State<TracingScreen> {
     }
   }
 
+  Future<void> _getContactStatus() async {
+    String? contactStatus = await _contactUploadManager.getContactStatus();
+    if (contactStatus == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+      return;
+    }
+
+    late String displayStatus;
+
+    switch (contactStatus) {
+      case 'positive':
+        displayStatus = 'Positive';
+        break;
+      case 'negative':
+        displayStatus = 'Negative';
+        break;
+      case 'close':
+        displayStatus = 'Close Contact';
+        break;
+      default:
+        displayStatus = 'Failed to retrieve status';
+        break;
+    }
+
+    setState(() {
+      _contactStatus = displayStatus;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -234,6 +274,9 @@ class _TracingScreenState extends State<TracingScreen> {
         });
       }),
     );
+
+    // Get contact status
+    _getContactStatus();
   }
 
   @override
@@ -289,95 +332,111 @@ class _TracingScreenState extends State<TracingScreen> {
         tooltip: 'Scan Building QR Code',
         child: const Icon(Icons.qr_code_scanner_rounded),
       ),
-      body: Center(
-        child: Wrap(
-          direction: Axis.vertical,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 20,
-          children: [
-            Text(
-              'Close Contacts',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-            Text(
-              _closeContactCount.toString(),
-              style: Theme.of(context).textTheme.headline1,
-            ),
-            Text(
-                'Mode: ${_peripheralServiceRunning ? 'Peripheral' : 'Central'}'),
-            Text('Advertisement Support: $_bleAdvertisementSupported'),
-            // Peripheral (Advertiser/Server) controls
-            Visibility(
-              visible: _peripheralServiceRunning,
+      body: RefreshIndicator(
+        onRefresh: _getContactStatus,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height - 150,
+            child: Center(
               child: Wrap(
                 direction: Axis.vertical,
                 crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 10,
+                spacing: 20,
                 children: [
-                  Text('BLE Advertising: $_bleAdvertising'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: (() => _bleAdvertisementSupported
-                            ? startAdvertising()
-                            : null),
-                        child: const Text('Start Advertiser'),
-                      ),
-                      const SizedBox(width: 15),
-                      ElevatedButton(
-                        onPressed: (() => _bleAdvertisementSupported
-                            ? stopAdvertising()
-                            : null),
-                        child: const Text('Stop Advertiser'),
-                      ),
-                    ],
+                  const Text(
+                    'Your Contact Status',
                   ),
-                  Text('GATT Server Running: $_gattServerRunning'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: startGattServer,
-                        child: const Text('Start GATT Server'),
-                      ),
-                      const SizedBox(width: 15),
-                      ElevatedButton(
-                        onPressed: stopGattServer,
-                        child: const Text('Stop GATT Server'),
-                      ),
-                    ],
+                  Text(
+                    _contactStatus,
+                    style: Theme.of(context).textTheme.headline6,
+                  ),
+                  Text(
+                    'Close Contacts',
+                    style: Theme.of(context).textTheme.headline4,
+                  ),
+                  Text(
+                    _closeContactCount.toString(),
+                    style: Theme.of(context).textTheme.headline1,
+                  ),
+                  Text(
+                      'Mode: ${_peripheralServiceRunning ? 'Peripheral' : 'Central'}'),
+                  Text('Advertisement Support: $_bleAdvertisementSupported'),
+                  // Peripheral (Advertiser/Server) controls
+                  Visibility(
+                    visible: _peripheralServiceRunning,
+                    child: Wrap(
+                      direction: Axis.vertical,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 10,
+                      children: [
+                        Text('BLE Advertising: $_bleAdvertising'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: (() => _bleAdvertisementSupported
+                                  ? startAdvertising()
+                                  : null),
+                              child: const Text('Start Advertiser'),
+                            ),
+                            const SizedBox(width: 15),
+                            ElevatedButton(
+                              onPressed: (() => _bleAdvertisementSupported
+                                  ? stopAdvertising()
+                                  : null),
+                              child: const Text('Stop Advertiser'),
+                            ),
+                          ],
+                        ),
+                        Text('GATT Server Running: $_gattServerRunning'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: startGattServer,
+                              child: const Text('Start GATT Server'),
+                            ),
+                            const SizedBox(width: 15),
+                            ElevatedButton(
+                              onPressed: stopGattServer,
+                              child: const Text('Stop GATT Server'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Central (Scanner/Client) controls
+                  Visibility(
+                    visible: _centralServiceRunning,
+                    child: Wrap(
+                      direction: Axis.vertical,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 10,
+                      children: [
+                        Text('Client scanning: $_bleScanning'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: startScanning,
+                              child: const Text('Start scanning'),
+                            ),
+                            const SizedBox(width: 15),
+                            ElevatedButton(
+                              onPressed: stopScanning,
+                              child: const Text('Stop scanning'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            // Central (Scanner/Client) controls
-            Visibility(
-              visible: _centralServiceRunning,
-              child: Wrap(
-                direction: Axis.vertical,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 10,
-                children: [
-                  Text('Client scanning: $_bleScanning'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: startScanning,
-                        child: const Text('Start scanning'),
-                      ),
-                      const SizedBox(width: 15),
-                      ElevatedButton(
-                        onPressed: stopScanning,
-                        child: const Text('Stop scanning'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

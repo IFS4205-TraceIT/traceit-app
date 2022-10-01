@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:traceit_app/contact_upload_manager.dart';
 
 class ContactUploadScreen extends StatefulWidget {
   const ContactUploadScreen({super.key});
@@ -8,31 +9,54 @@ class ContactUploadScreen extends StatefulWidget {
 }
 
 class _ContactUploadScreenState extends State<ContactUploadScreen> {
+  final ContactUploadManager _contactUploadManager = ContactUploadManager();
+
   bool _canUpload = false;
   bool _isUploading = false;
   bool _completedUpload = false;
 
   Future<void> _refreshUploadStatus() async {
-    // TODO: Refresh upload status
+    // Get upload status from server
+    bool? uploadStatus = await _contactUploadManager.getUploadStatus();
+    if (uploadStatus == null) {
+      // Error getting upload status
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error retrieving upload status'),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() {
-      _canUpload = !_canUpload;
+      _canUpload = uploadStatus;
     });
 
     await Future<void>.delayed(const Duration(seconds: 1));
   }
 
   Future<void> _uploadCloseContacts() async {
-    // TODO: Upload close contacts
     setState(() {
       _isUploading = true;
     });
 
-    await Future<void>.delayed(const Duration(seconds: 1));
+    bool hasUploaded = await _contactUploadManager.uploadCloseContacts();
+
+    // await Future<void>.delayed(const Duration(seconds: 1));
 
     setState(() {
       _isUploading = false;
-      _completedUpload = true;
+      _completedUpload = hasUploaded;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _refreshUploadStatus();
   }
 
   @override
@@ -46,7 +70,7 @@ class _ContactUploadScreenState extends State<ContactUploadScreen> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: SizedBox(
-            height: MediaQuery.of(context).size.height - 100,
+            height: MediaQuery.of(context).size.height - 150,
             child: Center(
               child: Wrap(
                 direction: Axis.vertical,
@@ -93,6 +117,7 @@ class _ContactUploadScreenState extends State<ContactUploadScreen> {
                             ' history. Please upload your close contacts as '
                             'soon as possible.',
                             textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 20),
                           ),
                         ),
                         ElevatedButton(
