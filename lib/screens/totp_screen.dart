@@ -288,6 +288,7 @@ class _TotpLoginState extends State<TotpLogin> {
 
     if (!totpLoggedIn) {
       showSnackbar('Failed to login with TOTP!');
+      return;
     }
 
     // Navigate to Tracing Screen
