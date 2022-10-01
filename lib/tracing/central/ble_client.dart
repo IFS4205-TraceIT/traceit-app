@@ -92,6 +92,10 @@ class BLEClient {
           readSuccess = true;
         } catch (e) {
           debugPrint('Error reading characteristic: $e');
+          // Disconnect from GATT server
+          _currentConnection!.cancel();
+          _currentConnection = null;
+          return;
         }
 
         // Save data to device
