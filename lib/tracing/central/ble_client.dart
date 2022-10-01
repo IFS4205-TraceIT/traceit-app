@@ -21,18 +21,7 @@ class BLEClient {
 
   void _onScanResult(DiscoveredDevice device) async {
     debugPrint(device.toString());
-    // print('Device name: ${device.id}');
-    // print('Device service UUID: ${device.serviceUuids}');
-    // print('Device RSSI: ${device.rssi}');
-    // print('Device RSSI: ${device.manufacturerData}');
 
-    // int manufacturerId =
-    //     device.manufacturerData.buffer.asByteData().getUint16(0, Endian.little);
-    // String manufacturerData = utf8.decode(
-    //     device.manufacturerData.sublist(2, device.manufacturerData.length));
-    // debugPrint('$manufacturerId $manufacturerData');
-
-    // TODO: Connect only if device not previously connected
     if (!_discoveredDevices.contains(device.id)) {
       _connectToDevice(device);
     } else {
