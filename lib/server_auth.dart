@@ -23,7 +23,7 @@ class ServerAuth {
   ) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/register'),
+          Uri.parse(routeRegister),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
@@ -56,7 +56,7 @@ class ServerAuth {
       String username, String password) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/login'),
+          Uri.parse(routeLogin),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
@@ -97,7 +97,7 @@ class ServerAuth {
   static Future<http.Response> refreshToken(String refreshToken) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/refresh'),
+          Uri.parse(routeRefresh),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
@@ -172,7 +172,7 @@ class ServerAuth {
 
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/logout'),
+          Uri.parse(routeLogout),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer ${tokens['accessToken']}',
@@ -196,7 +196,7 @@ class ServerAuth {
       String tempAccessToken) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/totp/register'),
+          Uri.parse(routeTotpRegister),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer $tempAccessToken',
@@ -233,7 +233,7 @@ class ServerAuth {
   ) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/totp'),
+          Uri.parse(routeTotpLogin),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer $tempAccessToken',

@@ -18,7 +18,7 @@ class ContactUploadManager {
     // Get contact status from server
     http.Response response = await http
         .get(
-          Uri.parse('$serverUrl/contacts/status'),
+          Uri.parse(routeContactStatus),
           headers: {
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer ${tokens['accessToken']}',
@@ -54,7 +54,7 @@ class ContactUploadManager {
     debugPrint('Sending request to server to get upload status');
     http.Response response = await http
         .get(
-          Uri.parse('$serverUrl/contacts/upload/status'),
+          Uri.parse(routeContactUploadStatus),
           headers: {
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer ${tokens['accessToken']}',
@@ -105,7 +105,7 @@ class ContactUploadManager {
 
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/contacts/upload'),
+          Uri.parse(routeContactUpload),
           headers: {
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer ${tokens['accessToken']}',

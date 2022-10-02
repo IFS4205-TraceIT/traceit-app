@@ -41,7 +41,7 @@ class TempIdManager {
         debugPrint('Send request to server to get new temp IDs');
         http.Response response = await http
             .get(
-              Uri.parse('$serverUrl/contacts/temp_id'),
+              Uri.parse(routeTempId),
               headers: <String, String>{
                 'Content-Type': 'application/json; charset=UTF-8',
                 'Authorization': 'Bearer ${tokens['accessToken']}',
