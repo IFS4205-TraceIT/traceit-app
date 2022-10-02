@@ -17,8 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final Storage _storage = Storage();
 
   bool _hasOtp = false;
-  late String _tempAccessToken;
-  late String _tempRefreshToken;
 
   void checkIsLoggedIn() async {
     Map<String, String?> tokens = await _storage.getTokens();
