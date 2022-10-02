@@ -14,6 +14,12 @@ class ServerAuth {
     String password,
     String email,
     String phoneNumber,
+    String nric,
+    String name,
+    String dob,
+    String gender,
+    String address,
+    String postalCode,
   ) async {
     http.Response response = await http
         .post(
@@ -26,6 +32,12 @@ class ServerAuth {
             'password': password,
             'email': email,
             'phone_number': phoneNumber,
+            'nric': nric,
+            'name': name,
+            'dob': dob,
+            'gender': gender,
+            'address': address,
+            'postal_code': postalCode,
           }),
         )
         .timeout(const Duration(seconds: 10))
