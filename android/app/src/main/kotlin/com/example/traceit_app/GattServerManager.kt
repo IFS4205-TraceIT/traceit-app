@@ -65,7 +65,6 @@ class GattServerManager(context: Context) {
                 return
             }
 
-            // TODO: Uncomment for release
             // Send data only if not previously connected
             if (discoveredDevices.contains(device.address)) {
                 Log.i(TAG, "Device ${device.address} already read")
@@ -80,8 +79,6 @@ class GattServerManager(context: Context) {
 
                 return
             }
-
-            // TODO: Check valid characteristic uuid
 
             Log.i(TAG, "onCharacteristicReadRequest from ${device.address}")
 
@@ -126,7 +123,6 @@ class GattServerManager(context: Context) {
                 return
             }
 
-            // TODO: Uncomment for release
             // Send data only if not previously connected
             if (discoveredDevices.contains(device.address)) {
                 Log.i(TAG, "Device ${device.address} already written")
@@ -196,7 +192,6 @@ class GattServerManager(context: Context) {
                 null
             )
 
-            // TODO: Uncomment for release
             // Add device to discovered devices
             discoveredDevices.add(device.address)
         }
