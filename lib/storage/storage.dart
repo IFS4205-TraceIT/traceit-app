@@ -102,6 +102,11 @@ class Storage {
     // });
   }
 
+  bool isLoaded() {
+    return Hive.isBoxOpen(_tempIdBoxName) &&
+        Hive.isBoxOpen(_closeContactBoxName);
+  }
+
   /* Login status */
   Future<bool> getLoginStatus() async {
     String? loginStatus = await _secureStorage.read(key: _loginStatusKey);

@@ -186,16 +186,24 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     _checkIsLoggedIn().then((isLoggedIn) {
       if (!isLoggedIn) {
-        // Wait for storage to initialise
-        Future.delayed(const Duration(seconds: 3), () {
-          // Delete temp IDs
-          _storage.deleteAllTempIds();
+        // Wait for storage to be initialized
+        Future.doWhile(() async {
+          bool storageLoaded = _storage.isLoaded();
 
-          // Delete tokens
-          _storage.deleteTokens();
+          if (storageLoaded) {
+            // Delete temp IDs
+            _storage.deleteAllTempIds();
 
-          // Set login status to false
-          _storage.setLoginStatus(false);
+            // Delete tokens
+            _storage.deleteTokens();
+
+            // Set login status to false
+            _storage.setLoginStatus(false);
+          } else {
+            await Future.delayed(const Duration(milliseconds: 100));
+          }
+
+          return !storageLoaded;
         });
       }
     });

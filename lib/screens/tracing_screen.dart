@@ -2,10 +2,8 @@ import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/contact_upload_manager.dart';
-import 'package:traceit_app/screens/building_access_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:traceit_app/screens/contact_upload_screen.dart';
-import 'package:traceit_app/screens/user_auth/login_screen.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage/storage.dart';
 import 'package:traceit_app/tracing/central/ble_client.dart';
@@ -277,8 +275,19 @@ class _TracingScreenState extends State<TracingScreen> {
       }),
     );
 
-    // Get contact status
-    _getContactStatus();
+    // Wait for storage to be initialized
+    Future.doWhile(() async {
+      bool storageLoaded = _storage.isLoaded();
+
+      if (storageLoaded) {
+        // Get contact status
+        _getContactStatus();
+      } else {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      return !storageLoaded;
+    });
   }
 
   @override
