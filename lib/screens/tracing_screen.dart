@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/contact_upload_manager.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:traceit_app/screens/contact_upload_screen.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage/storage.dart';
 import 'package:traceit_app/tracing/central/ble_client.dart';
@@ -300,12 +299,7 @@ class _TracingScreenState extends State<TracingScreen> {
           IconButton(
             onPressed: () => {
               // Navigate to contact upload screen
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ContactUploadScreen(),
-                ),
-              ),
+              Navigator.pushNamed(context, '/upload'),
             },
             icon: const Icon(Icons.upload),
             tooltip: 'Upload close contact data',
@@ -334,7 +328,7 @@ class _TracingScreenState extends State<TracingScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Navigate to scanner screen
-          Navigator.pushReplacementNamed(context, '/building_access');
+          Navigator.pushNamed(context, '/building');
         },
         tooltip: 'Scan Building QR Code',
         child: const Icon(Icons.qr_code_scanner_rounded),

@@ -22,8 +22,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/tracing': (context) => const TracingScreen(),
-        '/contact_upload': (context) => const ContactUploadScreen(),
-        '/building_access': (context) => const BuildingAccessScreen()
+        '/upload': (context) => const ContactUploadScreen(),
+        '/building': (context) => const BuildingAccessScreen()
       },
     );
   }
