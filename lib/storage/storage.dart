@@ -9,6 +9,9 @@ import 'package:traceit_app/const.dart';
 class Storage {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
+  // Login status
+  static const String _loginStatusKey = 'isLoggedIn';
+
   // Auth keys
   static const String _accessTokenKey = 'accessToken';
   static const String _refreshTokenKey = 'refreshToken';
@@ -97,6 +100,28 @@ class Storage {
     //   _closeContactCount = count == null ? 0 : int.parse(count);
     //   _broadcastCloseContactCount();
     // });
+  }
+
+  bool isLoaded() {
+    return Hive.isBoxOpen(_tempIdBoxName) &&
+        Hive.isBoxOpen(_closeContactBoxName);
+  }
+
+  /* Login status */
+  Future<bool> getLoginStatus() async {
+    String? loginStatus = await _secureStorage.read(key: _loginStatusKey);
+    if (loginStatus == null) {
+      return false;
+    } else {
+      return loginStatus == 'true';
+    }
+  }
+
+  Future<void> setLoginStatus(bool isLoggedIn) async {
+    await _secureStorage.write(
+      key: _loginStatusKey,
+      value: isLoggedIn.toString(),
+    );
   }
 
   /* Auth token */

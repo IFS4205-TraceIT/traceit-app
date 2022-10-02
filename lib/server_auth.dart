@@ -14,10 +14,16 @@ class ServerAuth {
     String password,
     String email,
     String phoneNumber,
+    String nric,
+    String name,
+    String dob,
+    String gender,
+    String address,
+    String postalCode,
   ) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/register'),
+          Uri.parse(routeRegister),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
@@ -26,6 +32,12 @@ class ServerAuth {
             'password': password,
             'email': email,
             'phone_number': phoneNumber,
+            'nric': nric,
+            'name': name,
+            'dob': dob,
+            'gender': gender,
+            'address': address,
+            'postal_code': postalCode,
           }),
         )
         .timeout(const Duration(seconds: 10))
@@ -44,7 +56,7 @@ class ServerAuth {
       String username, String password) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/login'),
+          Uri.parse(routeLogin),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
@@ -85,7 +97,7 @@ class ServerAuth {
   static Future<http.Response> refreshToken(String refreshToken) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/refresh'),
+          Uri.parse(routeRefresh),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
@@ -160,7 +172,7 @@ class ServerAuth {
 
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/logout'),
+          Uri.parse(routeLogout),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer ${tokens['accessToken']}',
@@ -184,7 +196,7 @@ class ServerAuth {
       String tempAccessToken) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/totp/register'),
+          Uri.parse(routeTotpRegister),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer $tempAccessToken',
@@ -221,7 +233,7 @@ class ServerAuth {
   ) async {
     http.Response response = await http
         .post(
-          Uri.parse('$serverUrl/auth/totp'),
+          Uri.parse(routeTotpLogin),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer $tempAccessToken',

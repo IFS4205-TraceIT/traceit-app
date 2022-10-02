@@ -1,12 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:traceit_app/screens/tracing_screen.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage/storage.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import 'login_screen.dart';
 
 class TotpScreen extends StatefulWidget {
   const TotpScreen({
@@ -50,10 +47,7 @@ class _TotpScreenState extends State<TotpScreen> {
 
       // Navigate to login screen
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        Navigator.pushReplacementNamed(context, '/login');
       }
       return;
     }
@@ -98,10 +92,7 @@ class _TotpScreenState extends State<TotpScreen> {
     ServerAuth.getTokens().then((tokens) {
       if (tokens == null) {
         // Navigate to login screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        Navigator.pushReplacementNamed(context, '/login');
       } else {
         setState(() {
           _tempAccessToken = tokens['accessToken']!;
@@ -241,10 +232,11 @@ class _TotpLoginState extends State<TotpLogin> {
   late String _tempAccessToken;
   late String _tempRefreshToken;
 
-  void showSnackbar(String message) {
+  void _showSnackbar(String message, {Color? color}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
+        backgroundColor: color,
       ),
     );
   }
@@ -254,7 +246,7 @@ class _TotpLoginState extends State<TotpLogin> {
     debugPrint('TOTP code: $totpCode');
 
     if (totpCode.isEmpty) {
-      showSnackbar('Please enter your TOTP code!');
+      _showSnackbar('Please enter your TOTP code!', color: Colors.red);
       return;
     }
 
@@ -262,14 +254,11 @@ class _TotpLoginState extends State<TotpLogin> {
     if (tokens == null) {
       // Tokens invalid
       debugPrint('Tokens invalid. Not refreshed.');
-      showSnackbar('Session expired');
+      _showSnackbar('Session expired', color: Colors.red);
 
       // Navigate to login screen
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        Navigator.pushReplacementNamed(context, '/login');
       }
 
       return;
@@ -287,17 +276,16 @@ class _TotpLoginState extends State<TotpLogin> {
     );
 
     if (!totpLoggedIn) {
-      showSnackbar('Failed to login with TOTP!');
+      _showSnackbar('Failed to login with TOTP!', color: Colors.red);
       return;
     }
 
+    // Set login status
+    await _storage.setLoginStatus(true);
+
     // Navigate to Tracing Screen
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const TracingScreen(),
-        ),
-      );
+      Navigator.pushReplacementNamed(context, '/tracing');
     }
   }
 

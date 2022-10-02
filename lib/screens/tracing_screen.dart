@@ -2,10 +2,7 @@ import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter/material.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/contact_upload_manager.dart';
-import 'package:traceit_app/screens/building_access_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:traceit_app/screens/contact_upload_screen.dart';
-import 'package:traceit_app/screens/login_screen.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage/storage.dart';
 import 'package:traceit_app/tracing/central/ble_client.dart';
@@ -169,12 +166,12 @@ class _TracingScreenState extends State<TracingScreen> {
       // Delete tokens
       await _storage.deleteTokens();
 
+      // Set login status to false
+      await _storage.setLoginStatus(false);
+
       // Navigate to login screen
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        Navigator.pushReplacementNamed(context, '/login');
       }
 
       return;
@@ -204,11 +201,12 @@ class _TracingScreenState extends State<TracingScreen> {
       // Delete tokens from storage
       await _storage.deleteTokens();
 
+      // Set login status to false
+      await _storage.setLoginStatus(false);
+
       // Navigate to login screen
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        Navigator.pushReplacementNamed(context, '/login');
       }
     } else {
       showSnackbar('Logout failed');
@@ -218,10 +216,11 @@ class _TracingScreenState extends State<TracingScreen> {
   Future<void> _getContactStatus() async {
     String? contactStatus = await _contactUploadManager.getContactStatus();
     if (contactStatus == null) {
+      // Set login status to false
+      await _storage.setLoginStatus(false);
+
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        Navigator.pushReplacementNamed(context, '/login');
       }
       return;
     }
@@ -275,8 +274,19 @@ class _TracingScreenState extends State<TracingScreen> {
       }),
     );
 
-    // Get contact status
-    _getContactStatus();
+    // Wait for storage to be initialized
+    Future.doWhile(() async {
+      bool storageLoaded = _storage.isLoaded();
+
+      if (storageLoaded) {
+        // Get contact status
+        _getContactStatus();
+      } else {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      return !storageLoaded;
+    });
   }
 
   @override
@@ -289,12 +299,7 @@ class _TracingScreenState extends State<TracingScreen> {
           IconButton(
             onPressed: () => {
               // Navigate to contact upload screen
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ContactUploadScreen(),
-                ),
-              ),
+              Navigator.pushNamed(context, '/upload'),
             },
             icon: const Icon(Icons.upload),
             tooltip: 'Upload close contact data',
@@ -323,11 +328,7 @@ class _TracingScreenState extends State<TracingScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Navigate to scanner screen
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: ((context) => const BuildingAccessScreen()),
-            ),
-          );
+          Navigator.pushNamed(context, '/building');
         },
         tooltip: 'Scan Building QR Code',
         child: const Icon(Icons.qr_code_scanner_rounded),
