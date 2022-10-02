@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
-import 'package:http/http.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/screens/totp_screen.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
@@ -20,8 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final Storage _storage = Storage();
 
   bool _hasOtp = false;
-  late String _tempAccessToken;
-  late String _tempRefreshToken;
 
   void checkIsLoggedIn() async {
     Map<String, String?> tokens = await _storage.getTokens();
@@ -62,29 +57,24 @@ class _LoginScreenState extends State<LoginScreen> {
     debugPrint('Password: ${loginData.password}');
 
     // Send login request to server
-    Response response = await ServerAuth.login(
+    Map<String, dynamic> loginStatus = await ServerAuth.login(
       loginData.name,
       loginData.password,
     );
 
-    debugPrint(response.body);
-    Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-    // If login is successful, save token to secure storage
-    if (response.statusCode == 200) {
-      bool hasOtp = responseBody['user']['has_otp'] as bool;
-      String tempAccessToken =
-          responseBody['user']['tokens']['access'] as String;
-      String tempRefreshToken =
-          responseBody['user']['tokens']['refresh'] as String;
+    if (loginStatus['statusCode'] == 200) {
+      // Save token to secure storage
+      await _storage.saveTokens(
+        loginStatus['tempAccessToken'],
+        loginStatus['tempRefreshToken'],
+      );
 
       setState(() {
-        _hasOtp = hasOtp;
-        _tempAccessToken = tempAccessToken;
-        _tempRefreshToken = tempRefreshToken;
+        _hasOtp = loginStatus['hasOtp'];
       });
       return null;
-    } else if (response.statusCode >= 400 && response.statusCode < 500) {
+    } else if (loginStatus['statusCode'] >= 400 &&
+        loginStatus['statusCode'] < 500) {
       return 'Login failed! Please check your credentials.';
     } else {
       return 'Login failed! Please try again later.';
@@ -100,24 +90,21 @@ class _LoginScreenState extends State<LoginScreen> {
         'Phone number: ${signupData.additionalSignupData!['phoneNumber']}');
 
     // Send register request to server
-    Response response = await ServerAuth.register(
+    int registrationStatus = await ServerAuth.register(
       signupData.name!,
       signupData.password!,
       signupData.additionalSignupData!['email'] as String,
       signupData.additionalSignupData!['phoneNumber'] as String,
     );
 
-    debugPrint('Signup response code: ${response.statusCode.toString()}');
-    debugPrint('Response body: ${response.body}');
-
-    if (response.statusCode == 201) {
+    if (registrationStatus == 201) {
       LoginData loginData = LoginData(
         name: signupData.name!,
         password: signupData.password!,
       );
       await onLogin(loginData);
       return null;
-    } else if (response.statusCode >= 400 && response.statusCode < 500) {
+    } else if (registrationStatus >= 400 && registrationStatus < 500) {
       return 'Signup failed! Please check your credentials.';
     } else {
       return 'Signup failed! Please try again later.';
@@ -127,11 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void onSubmitAnimationCompleted() {
     // Navigate to TOTP screen
     Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (context) => TotpScreen(
-        hasOtp: _hasOtp,
-        tempAccessToken: _tempAccessToken,
-        tempRefreshToken: _tempRefreshToken,
-      ),
+      builder: (context) => TotpScreen(hasOtp: _hasOtp),
     ));
   }
 

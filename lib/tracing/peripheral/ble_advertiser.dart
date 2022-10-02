@@ -47,11 +47,15 @@ class BLEAdvertiser {
       return;
     }
 
-    await blePeripheral.start(
-      advertiseData: advertiseData,
-      advertiseSettings: advertiseSettings,
-      // advertiseSetParameters: advertiseSetParameters,
-    );
+    try {
+      await blePeripheral.start(
+        advertiseData: advertiseData,
+        advertiseSettings: advertiseSettings,
+        // advertiseSetParameters: advertiseSetParameters,
+      );
+    } catch (e) {
+      debugPrint('BLE advertising failed: $e');
+    }
   }
 
   Future<void> stopAdvertising() async {

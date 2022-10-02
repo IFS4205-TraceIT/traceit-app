@@ -143,6 +143,10 @@ class Storage {
     _tempIdBox.addAll(tempIds);
   }
 
+  void deleteAllTempIds() {
+    _tempIdBox.clear();
+  }
+
   /* Close contact */
   void _broadcastCloseContactCount() {
     FBroadcast.instance().stickyBroadcast(
@@ -177,11 +181,15 @@ class Storage {
     Map<String, dynamic> closeContactData = {
       'tempId': tempId,
       'rssi': rssi,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     };
 
     await _closeContactBox.add(closeContactData);
 
     _incrementCloseContactCount();
+  }
+
+  Future<void> deleteAllCloseContacts() async {
+    await _closeContactBox.clear();
   }
 }

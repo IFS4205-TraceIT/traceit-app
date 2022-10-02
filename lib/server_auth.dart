@@ -7,139 +7,250 @@ import 'package:traceit_app/const.dart';
 import 'package:traceit_app/storage/storage.dart';
 
 class ServerAuth {
-  static Future<http.Response> register(
+  static final Storage _storage = Storage();
+
+  static Future<int> register(
     String username,
     String password,
     String email,
     String phoneNumber,
   ) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/register'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/register'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, String>{
+            'username': username,
+            'password': password,
+            'email': email,
+            'phone_number': phoneNumber,
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+      debugPrint('Error during registration: $error');
+      return http.Response('408 Request Timeout', 408);
+    });
+
+    debugPrint('Signup response code: ${response.statusCode.toString()}');
+    debugPrint('Response body: ${response.body}');
+
+    return response.statusCode;
+  }
+
+  static Future<Map<String, dynamic>> login(
+      String username, String password) async {
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/login'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, String>{
+            'username': username,
+            'password': password,
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+      debugPrint('Error during login: $error');
+      return http.Response('408 Request Timeout', 408);
+    });
+
+    debugPrint(response.body);
+
+    Map<String, dynamic> loginStatus = {
+      'statusCode': response.statusCode,
+    };
+
+    if (response.statusCode == 200) {
+      Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      bool hasOtp = responseBody['user']['has_otp'] as bool;
+      String tempAccessToken =
+          responseBody['user']['tokens']['access'] as String;
+      String tempRefreshToken =
+          responseBody['user']['tokens']['refresh'] as String;
+
+      loginStatus['hasOtp'] = hasOtp;
+      loginStatus['tempAccessToken'] = tempAccessToken;
+      loginStatus['tempRefreshToken'] = tempRefreshToken;
+    }
+
+    return loginStatus;
+  }
+
+  static Future<http.Response> refreshToken(String refreshToken) async {
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/refresh'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, String>{
+            'refresh': refreshToken,
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError(
+      (error, stackTrace) {
+        debugPrint('Error refreshing token: $error');
+        return http.Response('408 Request Timeout', 408);
       },
-      body: jsonEncode(<String, String>{
-        'username': username,
-        'password': password,
-        'email': email,
-        'phone_number': phoneNumber,
-      }),
     );
 
     return response;
   }
 
-  static Future<http.Response> login(String username, String password) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/login'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'username': username,
-        'password': password,
-      }),
-    );
+  static Future<Map<String, String>?> getTokens() async {
+    Map<String, String?> tokens = await _storage.getTokens();
+    String? accessToken = tokens['accessToken'];
+    String? refreshToken = tokens['refreshToken'];
 
-    return response;
-  }
-
-  static Future<Map<String, String>?> checkRefreshToken(
-    String accessToken,
-    String refreshToken,
-  ) async {
-    bool hasAccessTokenExpired = JwtDecoder.isExpired(accessToken);
-    bool hasRefreshTokenExpired = JwtDecoder.isExpired(refreshToken);
-
-    if (!hasAccessTokenExpired) {
+    if (accessToken == null || refreshToken == null) {
+      // No tokens stored
+      debugPrint('No tokens stored');
+      return null;
+    } else if (!JwtDecoder.isExpired(accessToken) &&
+        !JwtDecoder.isExpired(refreshToken)) {
+      // Tokens are not expired and valid
       return {
         'accessToken': accessToken,
         'refreshToken': refreshToken,
       };
-    } else if (hasAccessTokenExpired && !hasRefreshTokenExpired) {
-      // Refresh tokens
-      http.Response response = await ServerAuth.refreshToken(refreshToken);
-
-      if (response.statusCode == 200) {
-        debugPrint('Tokens refreshed');
-        Map<String, dynamic> responseBody = await jsonDecode(response.body);
-        return {
-          'accessToken': responseBody['access'] as String,
-          'refreshToken': responseBody['refresh'] as String,
-        };
-      } else {
-        debugPrint(response.body);
-        return null;
-      }
-    } else if (hasAccessTokenExpired && hasRefreshTokenExpired) {
-      debugPrint('Refresh token expired');
-      return null;
     }
 
-    debugPrint('Tokens invalid');
-    return null;
+    // Tokens are expired
+    // Refresh tokens
+    http.Response response = await ServerAuth.refreshToken(refreshToken);
+
+    if (response.statusCode == 200) {
+      debugPrint('Tokens refreshed');
+      Map<String, dynamic> responseBody = await jsonDecode(response.body);
+      String accessToken = responseBody['access'] as String;
+      String refreshToken = responseBody['refresh'] as String;
+
+      // Store new tokens
+      await _storage.saveTokens(accessToken, refreshToken);
+
+      return {
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
+    } else {
+      // Tokens invalid
+      debugPrint(response.body);
+      debugPrint('Tokens invalid. Not refreshed.');
+
+      // Delete tokens
+      await _storage.deleteTokens();
+
+      return null;
+    }
   }
 
-  static Future<http.Response> refreshToken(String refreshToken) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/refresh'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'refresh': refreshToken,
-      }),
-    );
-
-    return response;
-  }
-
-  static Future<http.Response> logout() async {
+  static Future<bool> logout() async {
     // Get tokens from storage
-    final Storage storage = Storage();
-    Map<String, String?> tokens = await storage.getTokens();
+    Map<String, String>? tokens = await getTokens();
+    if (tokens == null) {
+      return false;
+    }
 
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/logout'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer ${tokens['accessToken']}',
-      },
-      body: jsonEncode(<String, String?>{
-        'refresh': tokens['refreshToken'],
-      }),
-    );
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/logout'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer ${tokens['accessToken']}',
+          },
+          body: jsonEncode(<String, String?>{
+            'refresh': tokens['refreshToken'],
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+      debugPrint('Error during logout: $error');
+      return http.Response('408 Request Timeout', 408);
+    });
 
-    return response;
+    debugPrint(response.body);
+
+    return response.statusCode == 204;
   }
 
-  static Future<http.Response> totpRegister(String tempAccessToken) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/totp/register'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $tempAccessToken',
-      },
-    );
+  static Future<Map<String, dynamic>?> totpRegister(
+      String tempAccessToken) async {
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/totp/register'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer $tempAccessToken',
+          },
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+          debugPrint('Error during TOTP registration: $error');
+          return http.Response('408 Request Timeout', 408);
+        });
 
-    return response;
+    if (response.statusCode == 200) {
+      Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      String qrCode = responseBody['barcode'] as String;
+      String otpauthUrl = responseBody['url'] as String;
+      debugPrint('QR Code: $qrCode');
+      debugPrint('OTPAuth URL: $otpauthUrl');
+
+      return {
+        'hasGeneratedQrCode': true,
+        'qrCode': qrCode,
+        'otpauthUrl': otpauthUrl,
+      };
+    } else {
+      debugPrint(response.body);
+      return null;
+    }
   }
 
-  static Future<http.Response> totpLogin(
+  static Future<bool> totpLogin(
     String tempAccessToken,
     String totpCode,
   ) async {
-    http.Response response = await http.post(
-      Uri.parse('$serverUrl/auth/totp'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $tempAccessToken',
-      },
-      body: jsonEncode(<String, String>{
-        'totp': totpCode,
-      }),
-    );
+    http.Response response = await http
+        .post(
+          Uri.parse('$serverUrl/auth/totp'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer $tempAccessToken',
+          },
+          body: jsonEncode(<String, String>{
+            'totp': totpCode,
+          }),
+        )
+        .timeout(const Duration(seconds: 10))
+        .onError((error, stackTrace) {
+      debugPrint('Error during TOTP login: $error');
+      return http.Response('408 Request Timeout', 408);
+    });
 
-    return response;
+    if (response.statusCode == 200) {
+      Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      String accessToken = responseBody['access'] as String;
+      String refreshToken = responseBody['refresh'] as String;
+      debugPrint('Access token: $accessToken');
+      debugPrint('Refresh token: $refreshToken');
+
+      // Save access token to shared preferences
+      _storage.saveTokens(accessToken, refreshToken);
+
+      return true;
+    } else {
+      debugPrint(response.body);
+      return false;
+    }
   }
 }

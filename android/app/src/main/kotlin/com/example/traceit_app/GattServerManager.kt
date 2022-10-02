@@ -66,19 +66,20 @@ class GattServerManager(context: Context) {
             }
 
             // TODO: Uncomment for release
-//            if (discoveredDevices.contains(device.address)) {
-//                Log.i(TAG, "Device ${device.address} already written")
-//
-//                bluetoothGattServer!!.sendResponse(
-//                    device,
-//                    requestId,
-//                    GATT_FAILURE,
-//                    0,
-//                    null
-//                )
-//
-//                return
-//            }
+            // Send data only if not previously connected
+            if (discoveredDevices.contains(device.address)) {
+                Log.i(TAG, "Device ${device.address} already read")
+
+                bluetoothGattServer!!.sendResponse(
+                    device,
+                    requestId,
+                    GATT_FAILURE,
+                    0,
+                    null
+                )
+
+                return
+            }
 
             // TODO: Check valid characteristic uuid
 
@@ -126,19 +127,20 @@ class GattServerManager(context: Context) {
             }
 
             // TODO: Uncomment for release
-//            if (discoveredDevices.contains(device.address)) {
-//                Log.i(TAG, "Device ${device.address} already written")
-//
-//                bluetoothGattServer!!.sendResponse(
-//                    device,
-//                    requestId,
-//                    GATT_FAILURE,
-//                    0,
-//                    null
-//                )
-//
-//                return
-//            }
+            // Send data only if not previously connected
+            if (discoveredDevices.contains(device.address)) {
+                Log.i(TAG, "Device ${device.address} already written")
+
+                bluetoothGattServer!!.sendResponse(
+                    device,
+                    requestId,
+                    GATT_FAILURE,
+                    0,
+                    null
+                )
+
+                return
+            }
 
             Log.i(
                 TAG,
@@ -179,12 +181,11 @@ class GattServerManager(context: Context) {
             val receivedData = String(value, Charsets.UTF_8)
             Log.i(TAG, "Received write data: $receivedData")
 
-            val writeData: Map<String, Any> = Gson().fromJson(
+            // Save write data\
+            val dataToSave: Map<String, Any> = Gson().fromJson(
                 receivedData, HashMap<String, Any>().javaClass
             )
-
-            // Save write data
-            saveDataReceived(writeData)
+            saveDataReceived(dataToSave)
 
             // Send acknowledgement response
             bluetoothGattServer?.sendResponse(
@@ -197,7 +198,7 @@ class GattServerManager(context: Context) {
 
             // TODO: Uncomment for release
             // Add device to discovered devices
-//            discoveredDevices.add(device.address)
+            discoveredDevices.add(device.address)
         }
 
         fun saveDataReceived(writeData: Map<String, Any>) {
