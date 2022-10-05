@@ -10,13 +10,14 @@ class BuildingAccessScreen extends StatelessWidget {
         title: const Text('Building Access'),
       ),
       body: Center(
-        child: Wrap(
-          direction: Axis.vertical,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 10,
-          children: [
-            const Text('data'),
-          ],
+        child: Text(
+          'Submitted',
+          style: Theme.of(context)
+              .textTheme
+              .apply(
+                fontSizeFactor: 0.6,
+              )
+              .headline1,
         ),
       ),
     );

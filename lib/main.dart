@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:traceit_app/screens/building_access_screen.dart';
+import 'package:traceit_app/screens/building_access/building_access_screen.dart';
+import 'package:traceit_app/screens/building_access/scanner_screen.dart';
 import 'package:traceit_app/screens/contact_upload_screen.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
 import 'package:traceit_app/screens/user_auth/login_screen.dart';
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/tracing': (context) => const TracingScreen(),
         '/upload': (context) => const ContactUploadScreen(),
+        '/scanner': (context) => const ScannerScreen(),
         '/building': (context) => const BuildingAccessScreen()
       },
     );

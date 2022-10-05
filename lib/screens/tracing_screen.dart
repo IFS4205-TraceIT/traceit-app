@@ -328,7 +328,7 @@ class _TracingScreenState extends State<TracingScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Navigate to scanner screen
-          Navigator.pushNamed(context, '/building');
+          Navigator.pushNamed(context, '/scanner');
         },
         tooltip: 'Scan Building QR Code',
         child: const Icon(Icons.qr_code_scanner_rounded),
