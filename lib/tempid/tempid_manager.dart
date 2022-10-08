@@ -39,19 +39,18 @@ class TempIdManager {
 
         // Send request to server to get new temp IDs
         debugPrint('Send request to server to get new temp IDs');
-        http.Response response = await http
-            .get(
-              Uri.parse(routeTempId),
-              headers: <String, String>{
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Authorization': 'Bearer ${tokens['accessToken']}',
-              },
-            )
-            .timeout(const Duration(seconds: 10))
-            .onError((error, stackTrace) {
-              debugPrint('Error retrieving temp IDs: $error');
-              return http.Response('408 Request Timeout', 408);
-            });
+        http.Response response = await http.get(
+          Uri.parse(routeTempId),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Bearer ${tokens['accessToken']}',
+          },
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            return http.Response('408 Request Timeout', 408);
+          },
+        );
 
         if (response.statusCode == 200) {
           Map<String, dynamic> responseBody = jsonDecode(response.body);
