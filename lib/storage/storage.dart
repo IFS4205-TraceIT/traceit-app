@@ -223,5 +223,6 @@ class Storage {
 
   Future<void> deleteAllCloseContacts() async {
     await _closeContactBox.clear();
+    await _closeContactBox.flush();
   }
 }
