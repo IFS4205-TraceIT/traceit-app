@@ -183,18 +183,18 @@ class Storage {
   void updateCloseContactCount() {
     // Get start and end timestamp
     DateTime now = DateTime.now();
-    int start = DateTime(now.year, now.month, now.day, 0, 0, 0)
+    int startTimestamp = DateTime(now.year, now.month, now.day, 0, 0, 0)
             .millisecondsSinceEpoch ~/
         1000;
-    int end = DateTime(now.year, now.month, now.day, 23, 59, 59)
+    int endTimestamp = DateTime(now.year, now.month, now.day, 23, 59, 59)
             .millisecondsSinceEpoch ~/
         1000;
 
-    // Filter close contact from today
+    // Filter close contact from same day
     List<dynamic> closeContacts = _closeContactBox.values.toList();
     List<dynamic> filteredCloseContacts = closeContacts.where((closeContact) {
       int timestamp = closeContact['timestamp'];
-      return timestamp >= start && timestamp <= end;
+      return timestamp >= startTimestamp && timestamp <= endTimestamp;
     }).toList();
 
     _closeContactCount = filteredCloseContacts.length;
