@@ -75,7 +75,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
         );
 
-        Navigator.popAndPushNamed(context, '/tracing');
+        Navigator.pop(context);
       }
 
       context.loaderOverlay.hide();
