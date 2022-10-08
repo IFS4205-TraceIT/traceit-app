@@ -164,12 +164,13 @@ class Storage {
     _tempIdBox.deleteAt(0);
   }
 
-  void saveTempIds(List<Map<String, dynamic>> tempIds) {
-    _tempIdBox.addAll(tempIds);
+  Future<void> saveTempIds(List<Map<String, dynamic>> tempIds) async {
+    await _tempIdBox.addAll(tempIds);
+    await _tempIdBox.flush();
   }
 
-  void deleteAllTempIds() {
-    _tempIdBox.clear();
+  Future<void> deleteAllTempIds() async {
+    await _tempIdBox.clear();
   }
 
   /* Close contact */
@@ -210,6 +211,7 @@ class Storage {
     };
 
     await _closeContactBox.add(closeContactData);
+    await _closeContactBox.flush();
 
     _incrementCloseContactCount();
   }
