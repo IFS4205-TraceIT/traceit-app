@@ -40,7 +40,7 @@ class _TracingScreenState extends State<TracingScreen> {
   late FBroadcast _closeContactReceiver;
   int _closeContactCount = 0;
 
-  ContactUploadManager _contactUploadManager = ContactUploadManager();
+  final ContactUploadManager _contactUploadManager = ContactUploadManager();
   String _contactStatus = '';
 
   void showSnackbar(String message) {
