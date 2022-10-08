@@ -1,4 +1,5 @@
 import 'package:fbroadcast/fbroadcast.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/contact_upload_manager.dart';
@@ -8,6 +9,7 @@ import 'package:traceit_app/storage/storage.dart';
 import 'package:traceit_app/tracing/central/ble_client.dart';
 import 'package:traceit_app/tracing/peripheral/gatt_server.dart';
 import 'package:traceit_app/tracing/peripheral/ble_advertiser.dart';
+import 'package:traceit_app/tracing/tracing_scheduler.dart';
 
 class TracingScreen extends StatefulWidget {
   const TracingScreen({super.key});
@@ -19,8 +21,13 @@ class TracingScreen extends StatefulWidget {
 class _TracingScreenState extends State<TracingScreen> {
   final Storage _storage = Storage();
 
+  // Tracing scheduler
+  final TracingScheduler _tracingScheduler = TracingScheduler();
+  late TracingMode _currentTracingMode;
+
   late String _deviceModel;
 
+  // Tracing service running state
   bool _peripheralServiceRunning = false;
   bool _centralServiceRunning = false;
 
@@ -37,13 +44,12 @@ class _TracingScreenState extends State<TracingScreen> {
   final BLEClient _bleClient = BLEClient();
   bool _bleScanning = false;
 
-  late FBroadcast _closeContactReceiver;
   int _closeContactCount = 0;
 
   final ContactUploadManager _contactUploadManager = ContactUploadManager();
   String _contactStatus = '';
 
-  void showSnackbar(String message) {
+  void _showSnackbar(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -53,7 +59,7 @@ class _TracingScreenState extends State<TracingScreen> {
     }
   }
 
-  Future<void> getDeviceInfo() async {
+  Future<void> _getDeviceInfo() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
     setState(() {
@@ -62,15 +68,54 @@ class _TracingScreenState extends State<TracingScreen> {
     debugPrint('Running on ${androidInfo.model}');
   }
 
-  Future<void> checkAdvertisingSupport() async {
+  Future<void> _checkAdvertisingSupport() async {
     bool isSupported = await _bleAdvertiser.isSupported();
     setState(() {
       _bleAdvertisementSupported = isSupported;
     });
   }
 
-  Future<void> startPeripheralService() async {
+  Future<void> _startAdvertising() async {
+    await _bleAdvertiser.startAdvertising();
+
+    setState(() {
+      _bleAdvertising = true;
+    });
+  }
+
+  Future<void> _stopAdvertising() async {
+    await _bleAdvertiser.stopAdvertising();
+
+    setState(() {
+      _bleAdvertising = false;
+    });
+  }
+
+  Future<void> _startGattServer() async {
+    await _gattServer.start();
+
+    bool gattServerRunning = await _gattServer.isRunning();
+
+    setState(() {
+      _gattServerRunning = gattServerRunning;
+    });
+  }
+
+  Future<void> _stopGattServer() async {
+    await _gattServer.stop();
+
+    bool gattServerRunning = await _gattServer.isRunning();
+
+    setState(() {
+      _gattServerRunning = gattServerRunning;
+    });
+  }
+
+  Future<void> _startPeripheralService() async {
+    debugPrint('Starting peripheral service');
+
     if (_peripheralServiceRunning) {
+      debugPrint('Peripheral service already running');
       return;
     }
 
@@ -85,59 +130,26 @@ class _TracingScreenState extends State<TracingScreen> {
       await _bleAdvertiser.stopAdvertising();
     }
 
-    await startAdvertising();
-    await startGattServer();
+    await _startGattServer();
+    await _startAdvertising();
   }
 
-  Future<void> startAdvertising() async {
-    await _bleAdvertiser.startAdvertising();
-
-    setState(() {
-      _bleAdvertising = true;
-    });
-  }
-
-  Future<void> stopAdvertising() async {
-    await _bleAdvertiser.stopAdvertising();
-
-    setState(() {
-      _bleAdvertising = false;
-    });
-  }
-
-  Future<void> startGattServer() async {
-    await _gattServer.start();
-
-    bool gattServerRunning = await _gattServer.isRunning();
-
-    setState(() {
-      _gattServerRunning = gattServerRunning;
-    });
-  }
-
-  Future<void> stopGattServer() async {
-    await _gattServer.stop();
-
-    bool gattServerRunning = await _gattServer.isRunning();
-
-    setState(() {
-      _gattServerRunning = gattServerRunning;
-    });
-  }
-
-  void startCentralService() {
-    if (_centralServiceRunning) {
+  Future<void> _stopPeripheralService() async {
+    debugPrint('Stopping peripheral service');
+    if (!_peripheralServiceRunning) {
+      debugPrint('Peripheral service already stopped');
       return;
     }
 
-    setState(() {
-      _centralServiceRunning = true;
-    });
+    await _stopGattServer();
+    await _stopAdvertising();
 
-    startScanning();
+    setState(() {
+      _peripheralServiceRunning = false;
+    });
   }
 
-  void startScanning() {
+  void _startBleScanning() {
     _bleClient.initScan();
 
     setState(() {
@@ -145,7 +157,7 @@ class _TracingScreenState extends State<TracingScreen> {
     });
   }
 
-  void stopScanning() {
+  void _stopBleScanning() {
     _bleClient.stopScan();
 
     setState(() {
@@ -153,63 +165,47 @@ class _TracingScreenState extends State<TracingScreen> {
     });
   }
 
-  Future<void> logout() async {
-    Map<String, String>? tokens = await ServerAuth.getTokens();
-    if (tokens == null) {
-      // Tokens invalid
-      debugPrint('Tokens invalid. Not refreshed.');
-      showSnackbar('Session expired');
-
-      // Delete temp IDs
-      _storage.deleteAllTempIds();
-
-      // Delete tokens
-      await _storage.deleteTokens();
-
-      // Set login status to false
-      await _storage.setLoginStatus(false);
-
-      // Navigate to login screen
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-
+  void _startCentralService() {
+    debugPrint('Starting central service');
+    if (_centralServiceRunning) {
+      debugPrint('Central service already running');
       return;
     }
 
-    // Tokens not changed or refreshed
-    // Save tokens
-    await _storage.saveTokens(
-      tokens['accessToken']!,
-      tokens['refreshToken']!,
-    );
+    _startBleScanning();
 
-    // Send logout request to server
-    bool logoutSuccessful = await ServerAuth.logout();
+    setState(() {
+      _centralServiceRunning = true;
+    });
+  }
 
-    if (logoutSuccessful) {
-      // Stop tracing services
-      if (_peripheralServiceRunning) {
-        debugPrint('Stopping peripheral service');
-        await stopAdvertising();
-        await stopGattServer();
-      } else if (_centralServiceRunning) {
-        debugPrint('Stopping central service');
-        stopScanning();
-      }
+  void _stopCentralService() {
+    debugPrint('Stopping central service');
+    if (!_centralServiceRunning) {
+      debugPrint('Central service already stopped');
+      return;
+    }
 
-      // Delete tokens from storage
-      await _storage.deleteTokens();
+    _stopBleScanning();
 
-      // Set login status to false
-      await _storage.setLoginStatus(false);
+    setState(() {
+      _centralServiceRunning = false;
+    });
+  }
 
-      // Navigate to login screen
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    } else {
-      showSnackbar('Logout failed');
+  Future<void> _startTracingService() async {
+    if (_currentTracingMode == TracingMode.peripheral) {
+      await _startPeripheralService();
+    } else if (_currentTracingMode == TracingMode.central) {
+      _startCentralService();
+    }
+  }
+
+  Future<void> _stopTracingService() async {
+    if (_currentTracingMode == TracingMode.peripheral) {
+      await _stopPeripheralService();
+    } else if (_currentTracingMode == TracingMode.central) {
+      _stopCentralService();
     }
   }
 
@@ -247,25 +243,99 @@ class _TracingScreenState extends State<TracingScreen> {
     });
   }
 
+  Future<void> _logout() async {
+    Map<String, String>? tokens = await ServerAuth.getTokens();
+    if (tokens == null) {
+      // Tokens invalid
+      debugPrint('Tokens invalid. Not refreshed.');
+      _showSnackbar('Session expired');
+
+      // Delete temp IDs
+      await _storage.deleteAllTempIds();
+
+      // Delete tokens
+      await _storage.deleteTokens();
+
+      // Set login status to false
+      await _storage.setLoginStatus(false);
+
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+
+      return;
+    }
+
+    // Tokens not changed or refreshed
+    // Save tokens
+    await _storage.saveTokens(
+      tokens['accessToken']!,
+      tokens['refreshToken']!,
+    );
+
+    // Send logout request to server
+    bool logoutSuccessful = await ServerAuth.logout();
+
+    if (logoutSuccessful) {
+      // Stop tracing service
+      await _stopTracingService();
+
+      // Delete tokens from storage
+      await _storage.deleteTokens();
+
+      // Set login status to false
+      await _storage.setLoginStatus(false);
+
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    } else {
+      _showSnackbar('Logout failed');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
 
-    getDeviceInfo().then((value) {
-      checkAdvertisingSupport();
+    _checkAdvertisingSupport();
 
-      // TODO: remove at a later point
-      if (_deviceModel == 'SM-N920I') {
-        // Peripheral
-        startPeripheralService();
-      } else {
-        // Central
-        startCentralService();
-      }
-    });
+    if (kReleaseMode) {
+      // Release mode
+
+      // Start continuous tracing
+      Future.doWhile(() async {
+        _currentTracingMode = _tracingScheduler.getNext();
+        await _startTracingService();
+        await Future.delayed(const Duration(minutes: 1));
+        await _stopTracingService();
+        return true;
+      });
+    } else {
+      // Debug mode
+      _getDeviceInfo().then((value) {
+        if (_deviceModel == 'SM-N920I') {
+          // Peripheral
+          _startPeripheralService();
+        } else {
+          // Central
+          _startCentralService();
+        }
+      });
+
+      // Reset recent devices every 15 minutes
+      Future.doWhile(() async {
+        debugPrint('Clearing recent devices');
+        _bleClient.clearRecentDevices();
+        await Future.delayed(const Duration(minutes: 15));
+        return true;
+      });
+    }
 
     // Register broadcast receiver for close contact count
-    _closeContactReceiver = FBroadcast.instance().register(
+    FBroadcast.instance().register(
       closeContactBroadcastKey,
       ((value, callback) {
         setState(() {
@@ -281,6 +351,9 @@ class _TracingScreenState extends State<TracingScreen> {
       if (storageLoaded) {
         // Get contact status
         _getContactStatus();
+
+        // Get close contact count
+        _storage.updateCloseContactCount();
       } else {
         await Future.delayed(const Duration(milliseconds: 100));
       }
@@ -316,7 +389,7 @@ class _TracingScreenState extends State<TracingScreen> {
             onSelected: (value) {
               switch (value) {
                 case 1:
-                  logout();
+                  _logout();
                   break;
                 default:
                   break;
@@ -365,7 +438,7 @@ class _TracingScreenState extends State<TracingScreen> {
                   Text('Advertisement Support: $_bleAdvertisementSupported'),
                   // Peripheral (Advertiser/Server) controls
                   Visibility(
-                    visible: _peripheralServiceRunning,
+                    visible: kDebugMode && _peripheralServiceRunning,
                     child: Wrap(
                       direction: Axis.vertical,
                       crossAxisAlignment: WrapCrossAlignment.center,
@@ -377,14 +450,14 @@ class _TracingScreenState extends State<TracingScreen> {
                           children: [
                             ElevatedButton(
                               onPressed: (() => _bleAdvertisementSupported
-                                  ? startAdvertising()
+                                  ? _startAdvertising()
                                   : null),
                               child: const Text('Start Advertiser'),
                             ),
                             const SizedBox(width: 15),
                             ElevatedButton(
                               onPressed: (() => _bleAdvertisementSupported
-                                  ? stopAdvertising()
+                                  ? _stopAdvertising()
                                   : null),
                               child: const Text('Stop Advertiser'),
                             ),
@@ -395,12 +468,12 @@ class _TracingScreenState extends State<TracingScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             ElevatedButton(
-                              onPressed: startGattServer,
+                              onPressed: _startGattServer,
                               child: const Text('Start GATT Server'),
                             ),
                             const SizedBox(width: 15),
                             ElevatedButton(
-                              onPressed: stopGattServer,
+                              onPressed: _stopGattServer,
                               child: const Text('Stop GATT Server'),
                             ),
                           ],
@@ -410,7 +483,7 @@ class _TracingScreenState extends State<TracingScreen> {
                   ),
                   // Central (Scanner/Client) controls
                   Visibility(
-                    visible: _centralServiceRunning,
+                    visible: kDebugMode && _centralServiceRunning,
                     child: Wrap(
                       direction: Axis.vertical,
                       crossAxisAlignment: WrapCrossAlignment.center,
@@ -421,12 +494,12 @@ class _TracingScreenState extends State<TracingScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             ElevatedButton(
-                              onPressed: startScanning,
+                              onPressed: _startBleScanning,
                               child: const Text('Start scanning'),
                             ),
                             const SizedBox(width: 15),
                             ElevatedButton(
-                              onPressed: stopScanning,
+                              onPressed: _stopBleScanning,
                               child: const Text('Stop scanning'),
                             ),
                           ],

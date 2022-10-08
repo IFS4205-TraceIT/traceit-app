@@ -24,7 +24,6 @@ class Storage {
   // Close contact
   static const String _closeContactBoxIndexKey = 'closeContactBoxKey';
   static const String _closeContactBoxName = 'closeContact';
-  static const String _closeContactCountKey = 'closeContactCount';
   late final Box<dynamic> _closeContactBox;
   int _closeContactCount = 0;
 
@@ -93,13 +92,6 @@ class Storage {
       _closeContactBoxName,
       encryptionCipher: HiveAesCipher(base64Decode(closeContactBoxKey)),
     );
-
-    // TODO: Uncomment for release
-    // Read close contact count
-    // _secureStorage.read(key: _closeContactCountKey).then((count) {
-    //   _closeContactCount = count == null ? 0 : int.parse(count);
-    //   _broadcastCloseContactCount();
-    // });
   }
 
   bool isLoaded() {
@@ -186,16 +178,29 @@ class Storage {
 
     // Send broadcast to update UI
     _broadcastCloseContactCount();
-
-    // TODO: Remove for release
-    // await _secureStorage.write(
-    //   key: _closeContactCountKey,
-    //   value: _closeContactCount.toString(),
-    // );
   }
 
-  int get getCloseContactCount {
-    return _closeContactCount;
+  void updateCloseContactCount() {
+    // Get start and end timestamp
+    DateTime now = DateTime.now();
+    int start = DateTime(now.year, now.month, now.day, 0, 0, 0)
+            .millisecondsSinceEpoch ~/
+        1000;
+    int end = DateTime(now.year, now.month, now.day, 23, 59, 59)
+            .millisecondsSinceEpoch ~/
+        1000;
+
+    // Filter close contact from today
+    List<dynamic> closeContacts = _closeContactBox.values.toList();
+    List<dynamic> filteredCloseContacts = closeContacts.where((closeContact) {
+      int timestamp = closeContact['timestamp'];
+      return timestamp >= start && timestamp <= end;
+    }).toList();
+
+    _closeContactCount = filteredCloseContacts.length;
+
+    // Send broadcast to update UI
+    _broadcastCloseContactCount();
   }
 
   List<dynamic> getAllCloseContacts() {
