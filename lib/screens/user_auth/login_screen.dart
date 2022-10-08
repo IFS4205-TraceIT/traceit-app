@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:traceit_app/screens/user_auth/form_validator.dart';
 import 'package:traceit_app/screens/user_auth/totp_screen.dart';
 import 'package:traceit_app/server_auth.dart';
@@ -40,6 +41,19 @@ class _LoginScreenState extends State<LoginScreen> {
   final _registrationPostalCodeController = TextEditingController();
 
   bool _hasOtp = false;
+
+  Future<void> _requestAppPermissions() async {
+    final Map<Permission, PermissionStatus> statuses = await [
+      Permission.location,
+      Permission.bluetooth,
+      Permission.bluetoothAdvertise,
+      Permission.bluetoothConnect,
+      Permission.bluetoothScan,
+      Permission.camera,
+    ].request();
+
+    debugPrint(statuses.toString());
+  }
 
   Future<bool> _checkIsLoggedIn() async {
     bool isLoggedIn = await _storage.getLoginStatus();
@@ -184,6 +198,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+
+    _requestAppPermissions();
+
     _checkIsLoggedIn().then((isLoggedIn) {
       if (!isLoggedIn) {
         // Wait for storage to be initialized
