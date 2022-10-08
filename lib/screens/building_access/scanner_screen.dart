@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:traceit_app/const.dart';
+import 'package:traceit_app/server_auth.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -14,25 +19,85 @@ class _ScannerScreenState extends State<ScannerScreen> {
   final GlobalKey _qrKey = GlobalKey(debugLabel: 'QR');
   QRViewController? _controller;
 
+  Future<void> submitBuildingAccess(String buildingId) async {
+    Map<String, String>? tokens = await ServerAuth.getTokens();
+    if (tokens == null) {
+      // Token invalid, navigate to login screen
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+      return;
+    }
+
+    http.Response response = await http
+        .post(
+      Uri.parse(routeBuildingAccessRegister),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer ${tokens['accessToken']}',
+      },
+      body: jsonEncode({
+        'building': buildingId,
+      }),
+    )
+        .timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        return http.Response('408 Request Timeout', 408);
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      // Request successful
+      Map<String, dynamic> responseJson = jsonDecode(response.body);
+      String buildingName = responseJson['building_name'];
+      bool isInfected = responseJson['infected'];
+
+      if (mounted) {
+        Navigator.popAndPushNamed(
+          context,
+          '/building',
+          arguments: {
+            'buildingName': buildingName,
+            'isInfected': isInfected,
+          },
+        );
+      }
+    } else {
+      // Request error, show error message
+      debugPrint(response.body);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to submit building access'),
+            backgroundColor: Colors.red,
+          ),
+        );
+
+        Navigator.popAndPushNamed(context, '/tracing');
+      }
+
+      context.loaderOverlay.hide();
+      _controller!.resumeCamera();
+    }
+  }
+
   void _onQRViewCreated(QRViewController controller) {
     _controller = controller;
-
     _controller!.resumeCamera();
 
     controller.scannedDataStream.listen((scanData) {
-      String codeFormat = scanData.format.toString();
+      BarcodeFormat codeFormat = scanData.format;
       String? codeData = scanData.code;
       debugPrint('$codeFormat $codeData');
 
-      // TODO: Submit building ID to server
+      if (codeData != null) {
+        _controller!.pauseCamera();
+        context.loaderOverlay.show();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$codeFormat $codeData'),
-        ),
-      );
-
-      Navigator.popAndPushNamed(context, '/building');
+        submitBuildingAccess(codeData);
+      }
     });
   }
 
@@ -56,15 +121,18 @@ class _ScannerScreenState extends State<ScannerScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: QRView(
-        key: _qrKey,
-        onQRViewCreated: _onQRViewCreated,
-        overlay: QrScannerOverlayShape(
-          borderColor: Colors.red,
-          borderRadius: 10,
-          borderLength: 30,
-          borderWidth: 10,
-          cutOutSize: 300,
+      body: LoaderOverlay(
+        child: QRView(
+          key: _qrKey,
+          formatsAllowed: const [BarcodeFormat.qrcode],
+          onQRViewCreated: _onQRViewCreated,
+          overlay: QrScannerOverlayShape(
+            borderColor: Colors.red,
+            borderRadius: 10,
+            borderLength: 30,
+            borderWidth: 10,
+            cutOutSize: 300,
+          ),
         ),
       ),
     );
