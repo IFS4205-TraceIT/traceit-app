@@ -209,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           if (storageLoaded) {
             // Delete temp IDs
-            _storage.deleteAllTempIds();
+            await _storage.deleteAllTempIds();
 
             // Delete tokens
             _storage.deleteTokens();

@@ -64,7 +64,7 @@ class TempIdManager {
 
           // Save temp IDs
           debugPrint('Saving all temp IDs');
-          _storage.saveTempIds(tempIds);
+          await _storage.saveTempIds(tempIds);
         } else {
           debugPrint(response.body);
           tempId = null;

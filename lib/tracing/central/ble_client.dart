@@ -15,14 +15,14 @@ class BLEClient {
   late StreamSubscription? _scanStream;
   bool _isScanning = false;
 
-  final List _discoveredDevices = <String>[];
+  final List _recentDevices = <String>[];
 
   StreamSubscription<ConnectionStateUpdate>? _currentConnection;
 
   void _onScanResult(DiscoveredDevice device) async {
     debugPrint(device.toString());
 
-    if (!_discoveredDevices.contains(device.id)) {
+    if (!_recentDevices.contains(device.id)) {
       _connectToDevice(device);
     } else {
       debugPrint('Device ${device.id} already in discovered list');
@@ -123,7 +123,7 @@ class BLEClient {
 
         // Add device to discovered list
         if (readSuccess && writeSuccess) {
-          _discoveredDevices.add(connectionState.deviceId);
+          _recentDevices.add(connectionState.deviceId);
         }
 
         // Starting from Android 7 you could not start the BLE scan more than
@@ -143,10 +143,11 @@ class BLEClient {
   }
 
   void initScan() {
-    // Clear discovered devices
-    _discoveredDevices.clear();
-
     startScan();
+  }
+
+  void clearRecentDevices() {
+    _recentDevices.clear();
   }
 
   void startScan() {
