@@ -304,7 +304,6 @@ class _TracingScreenState extends State<TracingScreen> {
 
     if (kReleaseMode) {
       // Release mode
-
       // Start continuous tracing
       Future.doWhile(() async {
         _currentTracingMode = _tracingScheduler.getNext();
