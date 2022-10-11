@@ -45,7 +45,7 @@ flutter run
 flutter run --release
 ```
 
-# Building the app
+## Building the app
 
 Build output directory:
 * Release builds: `build/app/outputs/apk/release/`
