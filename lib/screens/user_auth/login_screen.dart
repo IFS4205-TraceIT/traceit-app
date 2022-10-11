@@ -85,9 +85,6 @@ class _LoginScreenState extends State<LoginScreen> {
     String username = _loginUsernameController.text;
     String password = _loginPasswordController.text;
 
-    debugPrint('Username: $username');
-    debugPrint('Password: $password');
-
     if (_loginFormKey.currentState != null &&
         !_loginFormKey.currentState!.validate()) {
       _showSnackBar('Please check your login credentials!', color: Colors.red);
@@ -148,17 +145,6 @@ class _LoginScreenState extends State<LoginScreen> {
     String gender = _registrationGenderSelected!;
     String address = _registrationAddressController.text;
     String postalCode = _registrationPostalCodeController.text;
-
-    debugPrint('Username: $username');
-    debugPrint('Password: $password');
-    debugPrint('Email: $email');
-    debugPrint('Phone number: $phoneNumber');
-    debugPrint('NRIC: $nric');
-    debugPrint('Name: $name');
-    debugPrint('Date of birth: $dob');
-    debugPrint('Gender: $gender');
-    debugPrint('Address: $address');
-    debugPrint('Postal code: $postalCode');
 
     // Send registration request to server
     int registrationStatus = await ServerAuth.register(

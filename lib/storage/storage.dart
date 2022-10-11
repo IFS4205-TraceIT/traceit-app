@@ -20,11 +20,13 @@ class Storage {
   static const String _tempIdBoxIndexKey = 'tempIdBoxKey';
   static const String _tempIdBoxName = 'tempId';
   late final Box<dynamic> _tempIdBox;
+  bool _tempIdBoxInitialised = false;
 
   // Close contact
   static const String _closeContactBoxIndexKey = 'closeContactBoxKey';
   static const String _closeContactBoxName = 'closeContact';
   late final Box<dynamic> _closeContactBox;
+  bool _closeContactBoxInitialised = false;
   int _closeContactCount = 0;
 
   Storage() {
@@ -61,6 +63,7 @@ class Storage {
       _tempIdBoxName,
       encryptionCipher: HiveAesCipher(base64Decode(tempIdBoxKey)),
     );
+    _tempIdBoxInitialised = true;
   }
 
   void _initCloseContactBox() async {
@@ -92,11 +95,11 @@ class Storage {
       _closeContactBoxName,
       encryptionCipher: HiveAesCipher(base64Decode(closeContactBoxKey)),
     );
+    _closeContactBoxInitialised = true;
   }
 
   bool isLoaded() {
-    return Hive.isBoxOpen(_tempIdBoxName) &&
-        Hive.isBoxOpen(_closeContactBoxName);
+    return _tempIdBoxInitialised && _closeContactBoxInitialised;
   }
 
   /* Login status */
@@ -180,7 +183,7 @@ class Storage {
     _broadcastCloseContactCount();
   }
 
-  void updateCloseContactCount() {
+  Future<void> updateCloseContactCount() async {
     // Get start and end timestamp
     DateTime now = DateTime.now();
     int startTimestamp = DateTime(now.year, now.month, now.day, 0, 0, 0)
@@ -191,7 +194,7 @@ class Storage {
         1000;
 
     // Filter close contact from same day
-    List<dynamic> closeContacts = _closeContactBox.values.toList();
+    List<dynamic> closeContacts = await getAllCloseContacts();
     List<dynamic> filteredCloseContacts = closeContacts.where((closeContact) {
       int timestamp = closeContact['timestamp'];
       return timestamp >= startTimestamp && timestamp <= endTimestamp;
@@ -203,7 +206,7 @@ class Storage {
     _broadcastCloseContactCount();
   }
 
-  List<dynamic> getAllCloseContacts() {
+  Future<List> getAllCloseContacts() async {
     List<dynamic> closeContacts = _closeContactBox.values.toList();
     return closeContacts;
   }

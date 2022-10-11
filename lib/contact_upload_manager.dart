@@ -81,7 +81,7 @@ class ContactUploadManager {
     bool uploaded = false;
 
     // Get close contacts from storage
-    List<dynamic> closeContacts = _storage.getAllCloseContacts();
+    List<dynamic> closeContacts = await _storage.getAllCloseContacts();
 
     List<Map<String, dynamic>> payload = closeContacts
         .map((contact) => {
