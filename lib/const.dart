@@ -1,6 +1,5 @@
 // TraceIT server URL
-// TODO: Replace with TraceIT server URL
-const String serverUrl = 'http://10.0.2.2:8080';
+const String serverUrl = 'https://traceit-04.comp.nus.edu.sg/contract/api';
 
 // Authentication routes
 const String routeRegister = '$serverUrl/auth/register';
