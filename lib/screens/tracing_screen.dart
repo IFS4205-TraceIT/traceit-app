@@ -318,9 +318,11 @@ class _TracingScreenState extends State<TracingScreen> {
       _getDeviceInfo().then((value) {
         if (_deviceModel == 'SM-N920I') {
           // Peripheral
+          _currentTracingMode = TracingMode.peripheral;
           _startPeripheralService();
         } else {
           // Central
+          _currentTracingMode = TracingMode.central;
           _startCentralService();
         }
       });
