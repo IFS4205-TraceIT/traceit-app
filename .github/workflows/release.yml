@@ -1,0 +1,47 @@
+name: Release TraceIT App
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  traceit-app-release:
+    # Only run on runners with the 'ci' label
+    runs-on: ci
+
+    container: cirrusci/flutter:stable
+
+    steps:
+      - name: Cleanup build folder
+        run: |
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+
+      - name: Clone repo
+        uses: actions/checkout@v3
+
+      - name: Install Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk
+      
+      - name: Delete previous release
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: true
+          tag_name: vlatest
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/app/outputs/apk/release/app-release.apk"
+          tag: vlatest
