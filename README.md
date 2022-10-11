@@ -47,6 +47,10 @@ flutter run --release
 
 # Building the app
 
+Build output directory:
+* Release builds: `build/app/outputs/apk/release/`
+* Debug builds: `build/app/outputs/apk/debug/`
+
 > Note: The `flutter build` command builds a release version by default. 
 
 ```
