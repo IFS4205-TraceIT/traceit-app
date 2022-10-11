@@ -25,7 +25,7 @@ class Storage {
   // Close contact
   static const String _closeContactBoxIndexKey = 'closeContactBoxKey';
   static const String _closeContactBoxName = 'closeContact';
-  late final Box<dynamic>? _closeContactBox;
+  late final Box<dynamic> _closeContactBox;
   bool _closeContactBoxInitialised = false;
   int _closeContactCount = 0;
 
