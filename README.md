@@ -29,7 +29,7 @@ Required permissions:
 flutter pub get
 ```
 
-5. Set the `serverUrl` in `lib/const.dart` to the backend URL path:
+5. Set the `serverUrl` in `lib/const.dart` to the backend server URL:
 ```dart
 // TraceIT server URL
 const String serverUrl = 'https://localhost:8080';
