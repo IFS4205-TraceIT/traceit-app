@@ -207,7 +207,7 @@ class Storage {
   }
 
   Future<List> getAllCloseContacts() async {
-    List<dynamic> closeContacts = _closeContactBox!.values.toList();
+    List<dynamic> closeContacts = _closeContactBox.values.toList();
     return closeContacts;
   }
 
@@ -218,14 +218,14 @@ class Storage {
       'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     };
 
-    await _closeContactBox!.add(closeContactData);
-    await _closeContactBox!.flush();
+    await _closeContactBox.add(closeContactData);
+    await _closeContactBox.flush();
 
     _incrementCloseContactCount();
   }
 
   Future<void> deleteAllCloseContacts() async {
-    await _closeContactBox!.clear();
-    await _closeContactBox!.flush();
+    await _closeContactBox.clear();
+    await _closeContactBox.flush();
   }
 }
