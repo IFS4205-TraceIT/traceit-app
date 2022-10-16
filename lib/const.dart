@@ -1,5 +1,5 @@
 // TraceIT server URL
-const String serverUrl = 'https://traceit-04.comp.nus.edu.sg/contract/api';
+const String serverUrl = 'https://traceit-04.comp.nus.edu.sg/contact/api';
 
 // Authentication routes
 const String routeRegister = '$serverUrl/auth/register';
