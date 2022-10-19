@@ -568,6 +568,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                 FormValidator.isValidPostalCode(postalCode),
                           ),
                           const SizedBox(height: 10),
+                          const Text(
+                            'By registering, you consent to the '
+                            'collection and use of your personal data by '
+                            'official contact tracers for the purpose of '
+                            'contacting you in the event of infection and '
+                            'for research.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
                           ElevatedButton(
                             onPressed: () => _submitRegister(),
                             style: ElevatedButton.styleFrom(
