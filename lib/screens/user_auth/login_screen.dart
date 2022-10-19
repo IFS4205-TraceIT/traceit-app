@@ -107,11 +107,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Navigate to TOTP screen
       if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.pushReplacementNamed(
           context,
-          MaterialPageRoute(
-            builder: (context) => TotpScreen(hasOtp: _hasOtp),
-          ),
+          '/totp',
+          arguments: {
+            'hasOtp': _hasOtp,
+          },
         );
       }
     } else if (loginStatus['statusCode'] >= 400 &&
@@ -566,6 +567,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (postalCode) =>
                                 FormValidator.isValidPostalCode(postalCode),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'By registering, you consent to the '
+                            'collection and use of your personal data by '
+                            'official contact tracers for the purpose of '
+                            'contacting you in the event of infection and '
+                            'for research.',
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 10),
                           ElevatedButton(

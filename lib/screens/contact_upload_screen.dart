@@ -120,6 +120,16 @@ class _ContactUploadScreenState extends State<ContactUploadScreen> {
                             style: TextStyle(fontSize: 20),
                           ),
                         ),
+                        const SizedBox(
+                          width: 300,
+                          child: Text(
+                            'By uploading your close contact history, you '
+                            'consent to the collection and use of the collected'
+                            ' data by official contact tracers for contact '
+                            'tracing purposes.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                         ElevatedButton(
                           onPressed: _isUploading || _completedUpload
                               ? null

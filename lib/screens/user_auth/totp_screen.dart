@@ -6,19 +6,14 @@ import 'package:traceit_app/storage/storage.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TotpScreen extends StatefulWidget {
-  const TotpScreen({
-    super.key,
-    required this.hasOtp,
-  });
-
-  final bool hasOtp;
+  const TotpScreen({super.key});
 
   @override
   State<TotpScreen> createState() => _TotpScreenState();
 }
 
 class _TotpScreenState extends State<TotpScreen> {
-  final Storage _storage = Storage();
+  late bool _hasOtp;
 
   bool _hasGeneratedQrCode = false;
 
@@ -104,9 +99,15 @@ class _TotpScreenState extends State<TotpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Map<String, dynamic> args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    setState(() {
+      _hasOtp = args['hasOtp'];
+    });
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.hasOtp ? 'TOTP Login' : 'TOTP Registration'),
+        title: Text(_hasOtp ? 'TOTP Login' : 'TOTP Registration'),
         automaticallyImplyLeading: false,
       ),
       body: Center(
@@ -116,7 +117,7 @@ class _TotpScreenState extends State<TotpScreen> {
             children: [
               Visibility(
                 // No TOTP registered
-                visible: !widget.hasOtp,
+                visible: !_hasOtp,
                 child: Wrap(
                   direction: Axis.vertical,
                   crossAxisAlignment: WrapCrossAlignment.center,
@@ -128,7 +129,7 @@ class _TotpScreenState extends State<TotpScreen> {
                     ),
                     Visibility(
                       // TOTP reistration
-                      visible: !widget.hasOtp,
+                      visible: !_hasOtp,
                       child: Column(
                         children: [
                           Visibility(
@@ -184,7 +185,7 @@ class _TotpScreenState extends State<TotpScreen> {
               ),
               Visibility(
                 // TOTP login
-                visible: widget.hasOtp,
+                visible: _hasOtp,
                 child: Center(
                   child: Wrap(
                     direction: Axis.vertical,

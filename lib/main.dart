@@ -4,6 +4,7 @@ import 'package:traceit_app/screens/building_access/scanner_screen.dart';
 import 'package:traceit_app/screens/contact_upload_screen.dart';
 import 'package:traceit_app/screens/tracing_screen.dart';
 import 'package:traceit_app/screens/user_auth/login_screen.dart';
+import 'package:traceit_app/screens/user_auth/totp_screen.dart';
 import 'package:traceit_app/storage/storage_method_channel.dart';
 import 'package:traceit_app/tempid/tempid_method_channel.dart';
 
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
+        '/totp': (context) => const TotpScreen(),
         '/tracing': (context) => const TracingScreen(),
         '/upload': (context) => const ContactUploadScreen(),
         '/scanner': (context) => const ScannerScreen(),
