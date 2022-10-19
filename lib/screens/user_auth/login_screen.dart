@@ -107,11 +107,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Navigate to TOTP screen
       if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.pushReplacementNamed(
           context,
-          MaterialPageRoute(
-            builder: (context) => TotpScreen(hasOtp: _hasOtp),
-          ),
+          '/totp',
+          arguments: {
+            'hasOtp': _hasOtp,
+          },
         );
       }
     } else if (loginStatus['statusCode'] >= 400 &&
