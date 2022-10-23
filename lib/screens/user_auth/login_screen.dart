@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:traceit_app/screens/user_auth/form_validator.dart';
-import 'package:traceit_app/screens/user_auth/totp_screen.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage/storage.dart';
 
@@ -39,8 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _registrationGenderSelected;
   final _registrationAddressController = TextEditingController();
   final _registrationPostalCodeController = TextEditingController();
-
-  bool _hasOtp = false;
 
   Future<void> _requestAppPermissions() async {
     final Map<Permission, PermissionStatus> statuses = await [
@@ -97,13 +94,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (loginStatus['statusCode'] == 200) {
       // Save token to secure storage
+      bool hasOtp = loginStatus['hasOtp'];
       String tempAccessToken = loginStatus['tempAccessToken'];
       String tempRefreshToken = loginStatus['tempRefreshToken'];
-      await _storage.saveTokens(tempAccessToken, tempRefreshToken);
-
-      setState(() {
-        _hasOtp = loginStatus['hasOtp'];
-      });
 
       // Navigate to TOTP screen
       if (mounted) {
@@ -111,7 +104,9 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           '/totp',
           arguments: {
-            'hasOtp': _hasOtp,
+            'hasOtp': hasOtp,
+            'tempAccessToken': tempAccessToken,
+            'tempRefreshToken': tempRefreshToken,
           },
         );
       }
