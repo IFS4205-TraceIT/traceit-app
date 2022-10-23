@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:traceit_app/screens/user_auth/form_validator.dart';
-import 'package:traceit_app/screens/user_auth/totp_screen.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage/storage.dart';
 
@@ -99,7 +98,6 @@ class _LoginScreenState extends State<LoginScreen> {
       // Save token to secure storage
       String tempAccessToken = loginStatus['tempAccessToken'];
       String tempRefreshToken = loginStatus['tempRefreshToken'];
-      await _storage.saveTokens(tempAccessToken, tempRefreshToken);
 
       setState(() {
         _hasOtp = loginStatus['hasOtp'];
@@ -112,6 +110,8 @@ class _LoginScreenState extends State<LoginScreen> {
           '/totp',
           arguments: {
             'hasOtp': _hasOtp,
+            'tempAccessToken': tempAccessToken,
+            'tempRefreshToken': tempRefreshToken,
           },
         );
       }

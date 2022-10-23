@@ -32,29 +32,6 @@ class _TotpScreenState extends State<TotpScreen> {
   }
 
   Future<void> registerTotp() async {
-    // Check if tokens need to be refreshed
-    Map<String, String>? tokens = await ServerAuth.getTokens();
-
-    if (tokens == null) {
-      // Tokens invalid
-      debugPrint('Tokens invalid. Not refreshed.');
-      showSnackbar('Session expired');
-
-      // Navigate to login screen
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-      return;
-    }
-
-    String accessToken = tokens['accessToken']!;
-    String refreshToken = tokens['refreshToken']!;
-
-    setState(() {
-      _tempAccessToken = accessToken;
-      _tempRefreshToken = refreshToken;
-    });
-
     // Request for TOTP QR code
     Map<String, dynamic>? totpRegistration =
         await ServerAuth.totpRegister(_tempAccessToken);
@@ -81,28 +58,13 @@ class _TotpScreenState extends State<TotpScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-
-    ServerAuth.getTokens().then((tokens) {
-      if (tokens == null) {
-        // Navigate to login screen
-        Navigator.pushReplacementNamed(context, '/login');
-      } else {
-        setState(() {
-          _tempAccessToken = tokens['accessToken']!;
-          _tempRefreshToken = tokens['refreshToken']!;
-        });
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final Map<String, dynamic> args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     setState(() {
       _hasOtp = args['hasOtp'];
+      _tempAccessToken = args['tempAccessToken'];
+      _tempRefreshToken = args['tempRefreshToken'];
     });
 
     return Scaffold(
@@ -250,25 +212,6 @@ class _TotpLoginState extends State<TotpLogin> {
       _showSnackbar('Please enter your TOTP code!', color: Colors.red);
       return;
     }
-
-    Map<String, String>? tokens = await ServerAuth.getTokens();
-    if (tokens == null) {
-      // Tokens invalid
-      debugPrint('Tokens invalid. Not refreshed.');
-      _showSnackbar('Session expired', color: Colors.red);
-
-      // Navigate to login screen
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-
-      return;
-    }
-
-    setState(() {
-      _tempAccessToken = tokens['accessToken']!;
-      _tempRefreshToken = tokens['refreshToken']!;
-    });
 
     // Send TOTP code to server
     bool totpLoggedIn = await ServerAuth.totpLogin(
