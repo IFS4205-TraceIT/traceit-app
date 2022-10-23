@@ -39,8 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _registrationAddressController = TextEditingController();
   final _registrationPostalCodeController = TextEditingController();
 
-  bool _hasOtp = false;
-
   Future<void> _requestAppPermissions() async {
     final Map<Permission, PermissionStatus> statuses = await [
       Permission.location,
@@ -96,12 +94,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (loginStatus['statusCode'] == 200) {
       // Save token to secure storage
+      bool hasOtp = loginStatus['hasOtp'];
       String tempAccessToken = loginStatus['tempAccessToken'];
       String tempRefreshToken = loginStatus['tempRefreshToken'];
-
-      setState(() {
-        _hasOtp = loginStatus['hasOtp'];
-      });
 
       // Navigate to TOTP screen
       if (mounted) {
@@ -109,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           '/totp',
           arguments: {
-            'hasOtp': _hasOtp,
+            'hasOtp': hasOtp,
             'tempAccessToken': tempAccessToken,
             'tempRefreshToken': tempRefreshToken,
           },
