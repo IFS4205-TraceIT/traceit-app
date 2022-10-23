@@ -73,8 +73,6 @@ class ServerAuth {
       },
     );
 
-    debugPrint(response.body);
-
     Map<String, dynamic> loginStatus = {
       'statusCode': response.statusCode,
     };
@@ -91,6 +89,8 @@ class ServerAuth {
       loginStatus['hasOtp'] = hasOtp;
       loginStatus['tempAccessToken'] = tempAccessToken;
       loginStatus['tempRefreshToken'] = tempRefreshToken;
+    } else {
+      debugPrint(response.body);
     }
 
     return loginStatus;

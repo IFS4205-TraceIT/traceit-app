@@ -28,7 +28,6 @@ class ContactUploadManager {
         return http.Response('408 Request Timeout', 408);
       },
     );
-    debugPrint(response.body);
 
     if (response.statusCode == 200) {
       Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -39,6 +38,7 @@ class ContactUploadManager {
 
       return status;
     } else {
+      debugPrint(response.body);
       return 'Failed to get contact status';
     }
   }
@@ -63,7 +63,6 @@ class ContactUploadManager {
         return http.Response('408 Request Timeout', 408);
       },
     );
-    debugPrint(response.body);
 
     if (response.statusCode == 200) {
       // Received upload status
@@ -73,6 +72,7 @@ class ContactUploadManager {
       return uploadStatus;
     } else {
       // Error requesting upload status
+      debugPrint(response.body);
       return null;
     }
   }

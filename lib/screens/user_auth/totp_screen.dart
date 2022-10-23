@@ -128,7 +128,7 @@ class _TotpScreenState extends State<TotpScreen> {
                       style: TextStyle(fontSize: 20),
                     ),
                     Visibility(
-                      // TOTP reistration
+                      // TOTP registration
                       visible: !_hasOtp,
                       child: Column(
                         children: [
