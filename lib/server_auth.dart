@@ -214,8 +214,8 @@ class ServerAuth {
 
       String qrCode = responseBody['barcode'] as String;
       String otpauthUrl = responseBody['url'] as String;
-      debugPrint('QR Code: $qrCode');
-      debugPrint('OTPAuth URL: $otpauthUrl');
+      // debugPrint('QR Code: $qrCode');
+      // debugPrint('OTPAuth URL: $otpauthUrl');
 
       return {
         'hasGeneratedQrCode': true,
@@ -255,8 +255,8 @@ class ServerAuth {
 
       String accessToken = responseBody['access'] as String;
       String refreshToken = responseBody['refresh'] as String;
-      debugPrint('Access token: $accessToken');
-      debugPrint('Refresh token: $refreshToken');
+      // debugPrint('Access token: $accessToken');
+      // debugPrint('Refresh token: $refreshToken');
 
       // Save access token to shared preferences
       _storage.saveTokens(accessToken, refreshToken);

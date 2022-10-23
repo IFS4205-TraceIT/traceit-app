@@ -244,7 +244,7 @@ class _TotpLoginState extends State<TotpLogin> {
 
   Future<void> totpLogin() async {
     String totpCode = _totpTextController.text;
-    debugPrint('TOTP code: $totpCode');
+    // debugPrint('TOTP code: $totpCode');
 
     if (totpCode.isEmpty) {
       _showSnackbar('Please enter your TOTP code!', color: Colors.red);
