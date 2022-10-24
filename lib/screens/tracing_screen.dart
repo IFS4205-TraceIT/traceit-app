@@ -407,7 +407,10 @@ class _TracingScreenState extends State<TracingScreen> {
         child: const Icon(Icons.qr_code_scanner_rounded),
       ),
       body: RefreshIndicator(
-        onRefresh: _getContactStatus,
+        onRefresh: () async {
+          _getContactStatus();
+          _storage.updateCloseContactCount();
+        },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: SizedBox(
