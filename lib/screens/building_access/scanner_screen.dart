@@ -7,6 +7,7 @@ import 'package:loader_overlay/loader_overlay.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/server_auth.dart';
+import 'package:traceit_app/utils.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -68,11 +69,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
       debugPrint(response.body);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to submit building access'),
-            backgroundColor: Colors.red,
-          ),
+        Utils.showSnackBar(
+          context,
+          'Failed to submit building access',
+          color: Colors.red,
         );
 
         Navigator.pop(context);

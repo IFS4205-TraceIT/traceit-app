@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:traceit_app/contact_upload_manager.dart';
+import 'package:traceit_app/utils.dart';
 
 class ContactUploadScreen extends StatefulWidget {
   const ContactUploadScreen({super.key});
@@ -21,10 +22,10 @@ class _ContactUploadScreenState extends State<ContactUploadScreen> {
     if (uploadStatus == null) {
       // Error getting upload status
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error retrieving upload status'),
-          ),
+        Utils.showSnackBar(
+          context,
+          'Error retrieving upload status',
+          color: Colors.red,
         );
       }
       return;
@@ -42,14 +43,23 @@ class _ContactUploadScreenState extends State<ContactUploadScreen> {
       _isUploading = true;
     });
 
-    bool hasUploaded = await _contactUploadManager.uploadCloseContacts();
-
-    // await Future<void>.delayed(const Duration(seconds: 1));
+    Map<String, dynamic> uploadStatus =
+        await _contactUploadManager.uploadCloseContacts();
+    bool hasUploaded = uploadStatus['uploaded'];
+    String message = uploadStatus['message'];
 
     setState(() {
       _isUploading = false;
       _completedUpload = hasUploaded;
     });
+
+    if (mounted) {
+      Utils.showSnackBar(
+        context,
+        message,
+        color: hasUploaded ? Colors.green : Colors.red,
+      );
+    }
   }
 
   @override
