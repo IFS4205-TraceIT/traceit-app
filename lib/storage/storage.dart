@@ -3,10 +3,17 @@ import 'dart:convert';
 import 'package:fbroadcast/fbroadcast.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:traceit_app/const.dart';
 
+// Storage singleton
 class Storage {
+  static final Storage _instance = Storage._internal();
+
+  factory Storage() {
+    return _instance;
+  }
+
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   // Login status
@@ -20,16 +27,16 @@ class Storage {
   static const String _tempIdBoxIndexKey = 'tempIdBoxKey';
   static const String _tempIdBoxName = 'tempId';
   late final Box<dynamic> _tempIdBox;
-  bool _tempIdBoxInitialised = false;
+  bool _isTempIdBoxOpen = false;
 
   // Close contact
   static const String _closeContactBoxIndexKey = 'closeContactBoxKey';
   static const String _closeContactBoxName = 'closeContact';
   late final Box<dynamic> _closeContactBox;
-  bool _closeContactBoxInitialised = false;
+  bool _isCloseContactBoxOpen = false;
   int _closeContactCount = 0;
 
-  Storage() {
+  Storage._internal() {
     _initTempidBox();
     _initCloseContactBox();
   }
@@ -51,19 +58,12 @@ class Storage {
       );
     }
 
-    // Init Hive
-    if (!Hive.isBoxOpen(_tempIdBoxName)) {
-      String applicationDirectory =
-          (await getApplicationDocumentsDirectory()).path;
-      Hive.init(applicationDirectory);
-    }
-
     // Open close contact secure Hive box
     _tempIdBox = await Hive.openBox(
       _tempIdBoxName,
       encryptionCipher: HiveAesCipher(base64Decode(tempIdBoxKey)),
     );
-    _tempIdBoxInitialised = true;
+    _isTempIdBoxOpen = true;
   }
 
   void _initCloseContactBox() async {
@@ -83,23 +83,16 @@ class Storage {
       );
     }
 
-    // Init Hive
-    if (!Hive.isBoxOpen(_closeContactBoxName)) {
-      String applicationDirectory =
-          (await getApplicationDocumentsDirectory()).path;
-      Hive.init(applicationDirectory);
-    }
-
     // Open close contact secure Hive box
     _closeContactBox = await Hive.openBox(
       _closeContactBoxName,
       encryptionCipher: HiveAesCipher(base64Decode(closeContactBoxKey)),
     );
-    _closeContactBoxInitialised = true;
+    _isCloseContactBoxOpen = true;
   }
 
   bool isLoaded() {
-    return _tempIdBoxInitialised && _closeContactBoxInitialised;
+    return _isTempIdBoxOpen && _isCloseContactBoxOpen;
   }
 
   /* Login status */
