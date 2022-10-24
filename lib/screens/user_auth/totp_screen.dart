@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage/storage.dart';
+import 'package:traceit_app/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TotpScreen extends StatefulWidget {
@@ -23,20 +24,19 @@ class _TotpScreenState extends State<TotpScreen> {
   String _qrCode = '';
   String _otpauthUrl = '';
 
-  void showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
-  }
-
   Future<void> registerTotp() async {
     // Request for TOTP QR code
     Map<String, dynamic>? totpRegistration =
         await ServerAuth.totpRegister(_tempAccessToken);
     if (totpRegistration == null) {
-      showSnackbar('Failed to generate TOTP QR code!');
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          'Failed to generate TOTP QR code!',
+          color: Colors.red,
+        );
+      }
+
       return;
     }
 
@@ -53,7 +53,13 @@ class _TotpScreenState extends State<TotpScreen> {
     bool launchedTotpApp = await launchUrl(Uri.parse(_otpauthUrl));
     if (!launchedTotpApp) {
       debugPrint('Failed to open TOTP app!');
-      showSnackbar('Failed to open TOTP app!');
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          'Failed to open TOTP app!',
+          color: Colors.red,
+        );
+      }
     }
   }
 
@@ -195,21 +201,16 @@ class _TotpLoginState extends State<TotpLogin> {
   late String _tempAccessToken;
   late String _tempRefreshToken;
 
-  void _showSnackbar(String message, {Color? color}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-      ),
-    );
-  }
-
   Future<void> totpLogin() async {
     String totpCode = _totpTextController.text;
     // debugPrint('TOTP code: $totpCode');
 
     if (totpCode.isEmpty) {
-      _showSnackbar('Please enter your TOTP code!', color: Colors.red);
+      Utils.showSnackBar(
+        context,
+        'Please enter your TOTP code!',
+        color: Colors.red,
+      );
       return;
     }
 
@@ -220,7 +221,14 @@ class _TotpLoginState extends State<TotpLogin> {
     );
 
     if (!totpLoggedIn) {
-      _showSnackbar('Failed to login with TOTP!', color: Colors.red);
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          'Failed to login with TOTP!',
+          color: Colors.red,
+        );
+      }
+
       return;
     }
 

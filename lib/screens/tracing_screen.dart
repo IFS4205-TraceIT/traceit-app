@@ -10,6 +10,7 @@ import 'package:traceit_app/tracing/central/ble_client.dart';
 import 'package:traceit_app/tracing/peripheral/gatt_server.dart';
 import 'package:traceit_app/tracing/peripheral/ble_advertiser.dart';
 import 'package:traceit_app/tracing/tracing_scheduler.dart';
+import 'package:traceit_app/utils.dart';
 
 class TracingScreen extends StatefulWidget {
   const TracingScreen({super.key});
@@ -48,16 +49,6 @@ class _TracingScreenState extends State<TracingScreen> {
 
   final ContactUploadManager _contactUploadManager = ContactUploadManager();
   String _contactStatus = '';
-
-  void _showSnackbar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-        ),
-      );
-    }
-  }
 
   Future<void> _getDeviceInfo() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -248,7 +239,9 @@ class _TracingScreenState extends State<TracingScreen> {
     if (tokens == null) {
       // Tokens invalid
       debugPrint('Tokens invalid. Not refreshed.');
-      _showSnackbar('Session expired');
+      if (mounted) {
+        Utils.showSnackBar(context, 'Session expired', color: Colors.red);
+      }
 
       // Delete temp IDs
       await _storage.deleteAllTempIds();
@@ -292,7 +285,13 @@ class _TracingScreenState extends State<TracingScreen> {
         Navigator.pushReplacementNamed(context, '/login');
       }
     } else {
-      _showSnackbar('Logout failed');
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          'Logout failed',
+          color: Colors.red,
+        );
+      }
     }
   }
 

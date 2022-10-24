@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:traceit_app/screens/user_auth/form_validator.dart';
 import 'package:traceit_app/server_auth.dart';
 import 'package:traceit_app/storage/storage.dart';
+import 'package:traceit_app/utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -65,15 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return isLoggedIn;
   }
 
-  void _showSnackBar(String message, {Color? color}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-      ),
-    );
-  }
-
   void _toggleCard() {
     setState(() {
       _isLogin = !_isLogin;
@@ -86,7 +78,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (_loginFormKey.currentState != null &&
         !_loginFormKey.currentState!.validate()) {
-      _showSnackBar('Please check your login credentials!', color: Colors.red);
+      Utils.showSnackBar(
+        context,
+        'Please check your login credentials!',
+        color: Colors.red,
+      );
+
       return;
     }
 
@@ -114,22 +111,33 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } else if (loginStatus['statusCode'] >= 400 &&
         loginStatus['statusCode'] < 500) {
-      _showSnackBar(
-        'Login failed! Please check your credentials.',
-        color: Colors.red,
-      );
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          'Login failed! Please check your credentials.',
+          color: Colors.red,
+        );
+      }
     } else {
-      _showSnackBar('Login failed! Please try again later.', color: Colors.red);
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          'Login failed! Please try again later.',
+          color: Colors.red,
+        );
+      }
     }
   }
 
   Future<void> _submitRegister() async {
     if (_registrationFormKey.currentState != null &&
         !_registrationFormKey.currentState!.validate()) {
-      _showSnackBar(
+      Utils.showSnackBar(
+        context,
         'Please check your registration details!',
         color: Colors.red,
       );
+
       return;
     }
 
@@ -170,39 +178,55 @@ class _LoginScreenState extends State<LoginScreen> {
       _toggleCard();
       _submitLogin();
     } else if (statusCode == 408) {
-      _showSnackBar(
-        'Request Timeout! Please try again later.',
-        color: Colors.red,
-      );
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          'Request Timeout! Please try again later.',
+          color: Colors.red,
+        );
+      }
     } else if (statusCode == 400) {
       Map<String, dynamic> responseBody = jsonDecode(statusBody);
 
       // Check if error is due to password
       if (!responseBody.containsKey('errors') ||
           !responseBody['errors'].containsKey('password')) {
-        _showSnackBar(
-          'Registration failed! Please try again later.',
-          color: Colors.red,
-        );
+        if (mounted) {
+          Utils.showSnackBar(
+            context,
+            'Registration failed! Please try again later.',
+            color: Colors.red,
+          );
+        }
+
         return;
       }
 
       // Show password error
       String passwordError = responseBody['errors']['password'][0];
-      _showSnackBar(
-        passwordError,
-        color: Colors.red,
-      );
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          passwordError,
+          color: Colors.red,
+        );
+      }
     } else if (statusCode > 400 && statusCode < 500) {
-      _showSnackBar(
-        'Registration failed! Please check your credentials.',
-        color: Colors.red,
-      );
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          'Registration failed! Please check your credentials.',
+          color: Colors.red,
+        );
+      }
     } else {
-      _showSnackBar(
-        'Registration failed! Please try again later.',
-        color: Colors.red,
-      );
+      if (mounted) {
+        Utils.showSnackBar(
+          context,
+          'Registration failed! Please try again later.',
+          color: Colors.red,
+        );
+      }
     }
   }
 
