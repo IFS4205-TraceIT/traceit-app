@@ -33,9 +33,6 @@ class ContactUploadManager {
       Map<String, dynamic> responseBody = jsonDecode(response.body);
       String status = responseBody['status'];
 
-      // Delete local close contacts data after upload
-      await _storage.deleteAllCloseContacts();
-
       return status;
     } else {
       debugPrint(response.body);
@@ -123,6 +120,9 @@ class ContactUploadManager {
       // Close contacts uploaded successfully
       debugPrint('Close contacts uploaded successfully');
       uploaded = true;
+
+      // Delete local close contacts data after upload
+      await _storage.deleteAllCloseContacts();
     } else {
       // Error uploading close contacts
       debugPrint(response.body);
