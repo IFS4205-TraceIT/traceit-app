@@ -9,7 +9,7 @@ import 'package:traceit_app/storage/storage.dart';
 class ServerAuth {
   static final Storage _storage = Storage();
 
-  static Future<int> register(
+  static Future<Map<String, dynamic>> register(
     String username,
     String password,
     String email,
@@ -50,7 +50,10 @@ class ServerAuth {
     debugPrint('Signup response code: ${response.statusCode.toString()}');
     debugPrint('Response body: ${response.body}');
 
-    return response.statusCode;
+    return {
+      'statusCode': response.statusCode,
+      'body': response.body,
+    };
   }
 
   static Future<Map<String, dynamic>> login(

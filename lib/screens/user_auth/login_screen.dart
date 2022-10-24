@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -143,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
     String postalCode = _registrationPostalCodeController.text;
 
     // Send registration request to server
-    int registrationStatus = await ServerAuth.register(
+    Map<String, dynamic> registrationStatus = await ServerAuth.register(
       username,
       password,
       email,
@@ -156,7 +158,10 @@ class _LoginScreenState extends State<LoginScreen> {
       postalCode,
     );
 
-    if (registrationStatus == 201) {
+    int statusCode = registrationStatus['statusCode'];
+    String statusBody = registrationStatus['body'];
+
+    if (statusCode == 201) {
       // Proceed with login
       setState(() {
         _loginUsernameController.text = username;
@@ -164,7 +169,31 @@ class _LoginScreenState extends State<LoginScreen> {
       });
       _toggleCard();
       _submitLogin();
-    } else if (registrationStatus >= 400 && registrationStatus < 500) {
+    } else if (statusCode == 408) {
+      _showSnackBar(
+        'Request Timeout! Please try again later.',
+        color: Colors.red,
+      );
+    } else if (statusCode == 400) {
+      Map<String, dynamic> responseBody = jsonDecode(statusBody);
+
+      // Check if error is due to password
+      if (!responseBody.containsKey('errors') ||
+          !responseBody['errors'].containsKey('password')) {
+        _showSnackBar(
+          'Registration failed! Please try again later.',
+          color: Colors.red,
+        );
+        return;
+      }
+
+      // Show password error
+      String passwordError = responseBody['errors']['password'][0];
+      _showSnackBar(
+        passwordError,
+        color: Colors.red,
+      );
+    } else if (statusCode > 400 && statusCode < 500) {
       _showSnackBar(
         'Registration failed! Please check your credentials.',
         color: Colors.red,
