@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:traceit_app/screens/building_access/building_access_screen.dart';
 import 'package:traceit_app/screens/building_access/scanner_screen.dart';
 import 'package:traceit_app/screens/contact_upload_screen.dart';
@@ -8,8 +9,13 @@ import 'package:traceit_app/screens/user_auth/totp_screen.dart';
 import 'package:traceit_app/storage/storage_method_channel.dart';
 import 'package:traceit_app/tempid/tempid_method_channel.dart';
 
-void main() {
+void main() async {
+  // Initialise Flutter Hive
+  await Hive.initFlutter();
+
   runApp(const MyApp());
+
+  // Configure method channels to native Android calls
   StorageMethodChannel.instance.configureChannel();
   TempIdMethodChannel.instance.configureChannel();
 }

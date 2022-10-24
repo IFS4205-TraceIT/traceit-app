@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:traceit_app/const.dart';
 import 'package:traceit_app/server_auth.dart';
@@ -32,9 +32,6 @@ class ContactUploadManager {
     if (response.statusCode == 200) {
       Map<String, dynamic> responseBody = jsonDecode(response.body);
       String status = responseBody['status'];
-
-      // Delete local close contacts data after upload
-      await _storage.deleteAllCloseContacts();
 
       return status;
     } else {
@@ -123,6 +120,9 @@ class ContactUploadManager {
       // Close contacts uploaded successfully
       debugPrint('Close contacts uploaded successfully');
       uploaded = true;
+
+      // Delete local close contacts data after upload
+      await _storage.deleteAllCloseContacts();
     } else {
       // Error uploading close contacts
       debugPrint(response.body);
