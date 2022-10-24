@@ -74,9 +74,7 @@ class ContactUploadManager {
     }
   }
 
-  Future<bool> uploadCloseContacts() async {
-    bool uploaded = false;
-
+  Future<Map<String, dynamic>> uploadCloseContacts() async {
     // Get close contacts from storage
     List<dynamic> closeContacts = await _storage.getAllCloseContacts();
 
@@ -92,7 +90,10 @@ class ContactUploadManager {
 
     Map<String, String>? tokens = await ServerAuth.getTokens();
     if (tokens == null) {
-      return false;
+      return {
+        'uploaded': false,
+        'message': 'Failed to get tokens',
+      };
     }
 
     // Upload close contacts to server
@@ -118,16 +119,30 @@ class ContactUploadManager {
 
     if (response.statusCode == 201) {
       // Close contacts uploaded successfully
-      debugPrint('Close contacts uploaded successfully');
-      uploaded = true;
+      debugPrint('Close contacts successfully uploaded');
 
       // Delete local close contacts data after upload
+      debugPrint('Deleting close contact data on local storage');
       await _storage.deleteAllCloseContacts();
+
+      return {
+        'uploaded': true,
+        'message': 'Close contacts successfully uploaded',
+      };
+    } else if (response.statusCode == 408) {
+      return {
+        'uploaded': false,
+        'message': 'Request timeout',
+      };
     } else {
       // Error uploading close contacts
       debugPrint(response.body);
-    }
+      Map<String, dynamic> responseBody = jsonDecode(response.body);
 
-    return uploaded;
+      return {
+        'uploaded': false,
+        'message': responseBody['errors'][0],
+      };
+    }
   }
 }

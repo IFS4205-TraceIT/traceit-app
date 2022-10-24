@@ -43,14 +43,23 @@ class _ContactUploadScreenState extends State<ContactUploadScreen> {
       _isUploading = true;
     });
 
-    bool hasUploaded = await _contactUploadManager.uploadCloseContacts();
-
-    // await Future<void>.delayed(const Duration(seconds: 1));
+    Map<String, dynamic> uploadStatus =
+        await _contactUploadManager.uploadCloseContacts();
+    bool hasUploaded = uploadStatus['uploaded'];
+    String message = uploadStatus['message'];
 
     setState(() {
       _isUploading = false;
       _completedUpload = hasUploaded;
     });
+
+    if (mounted) {
+      Utils.showSnackBar(
+        context,
+        message,
+        color: hasUploaded ? Colors.green : Colors.red,
+      );
+    }
   }
 
   @override
