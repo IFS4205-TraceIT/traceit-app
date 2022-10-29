@@ -438,78 +438,8 @@ class _TracingScreenState extends State<TracingScreen> {
                   ),
                   Text(
                       'Mode: ${_peripheralServiceRunning ? 'Peripheral' : 'Central'}'),
-                  Text('Advertisement Support: $_bleAdvertisementSupported'),
-                  // Peripheral (Advertiser/Server) controls
-                  Visibility(
-                    visible: kDebugMode && _peripheralServiceRunning,
-                    child: Wrap(
-                      direction: Axis.vertical,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 10,
-                      children: [
-                        Text('BLE Advertising: $_bleAdvertising'),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton(
-                              onPressed: (() => _bleAdvertisementSupported
-                                  ? _startAdvertising()
-                                  : null),
-                              child: const Text('Start Advertiser'),
-                            ),
-                            const SizedBox(width: 15),
-                            ElevatedButton(
-                              onPressed: (() => _bleAdvertisementSupported
-                                  ? _stopAdvertising()
-                                  : null),
-                              child: const Text('Stop Advertiser'),
-                            ),
-                          ],
-                        ),
-                        Text('GATT Server Running: $_gattServerRunning'),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton(
-                              onPressed: _startGattServer,
-                              child: const Text('Start GATT Server'),
-                            ),
-                            const SizedBox(width: 15),
-                            ElevatedButton(
-                              onPressed: _stopGattServer,
-                              child: const Text('Stop GATT Server'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Central (Scanner/Client) controls
-                  Visibility(
-                    visible: kDebugMode && _centralServiceRunning,
-                    child: Wrap(
-                      direction: Axis.vertical,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 10,
-                      children: [
-                        Text('Client scanning: $_bleScanning'),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton(
-                              onPressed: _startBleScanning,
-                              child: const Text('Start scanning'),
-                            ),
-                            const SizedBox(width: 15),
-                            ElevatedButton(
-                              onPressed: _stopBleScanning,
-                              child: const Text('Stop scanning'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  Text(
+                      'Advertisement Support: $_bleAdvertisementSupported'), // Central (Scanner/Client) controls
                 ],
               ),
             ),
