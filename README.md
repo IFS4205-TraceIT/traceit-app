@@ -1,3 +1,4 @@
+# Sean is a god
 # traceit-app
 The TraceIT mobile app has three main features:
 1. Close proximity contact tracing via Bluetooth
